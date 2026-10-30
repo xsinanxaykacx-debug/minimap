@@ -21,6 +21,34 @@ function addNeonRoads(map: MapLibreMap) {
 
   // Katman listesini kaldırma işleminden SONRA al; silinen glow referansı kalmasın.
   const styleLayers = map.getStyle().layers ?? [];
+
+  // Liberty'deki Sultanahmet taramalarının asıl kaynağı road_area_pattern:
+  // fill-pattern = pedestrian_polygon. Beyaz kesikli yaya çizgileri de gizlenir.
+  let scanlineLayersHidden = 0;
+  for (const layer of styleLayers) {
+    const id = layer.id.toLowerCase();
+    const fillPattern = layer.type === "fill"
+      ? map.getPaintProperty(layer.id, "fill-pattern")
+      : undefined;
+    const patternText = typeof fillPattern === "string"
+      ? fillPattern.toLowerCase()
+      : JSON.stringify(fillPattern ?? "").toLowerCase();
+
+    const isPedestrianPattern =
+      layer.type === "fill" &&
+      (/(pedestrian|footway|plaza|paving|square)/.test(id) ||
+        patternText.includes("pedestrian_polygon"));
+
+    const isPedestrianScanline =
+      layer.type === "line" &&
+      /(pedestrian|footway|plaza|paving)/.test(id);
+
+    if (isPedestrianPattern || isPedestrianScanline) {
+      map.setLayoutProperty(layer.id, "visibility", "none");
+      scanlineLayersHidden++;
+    }
+  }
+
   const roadLayers = styleLayers.filter((layer) => {
     if (
       layer.type !== "line" ||
@@ -100,7 +128,7 @@ function addNeonRoads(map: MapLibreMap) {
   }
 
   console.info(
-    `Map Lab: ${asphaltCount} asfalt yol merkezi, ${neonCasingCount} cyan yol kenarı, ${pedestrianFillCount} koyu yaya alanı.`
+    `Map Lab: ${asphaltCount} asfalt yol merkezi, ${neonCasingCount} cyan yol kenarı, ${pedestrianFillCount} koyu yaya alanı, ${scanlineLayersHidden} beyaz tarama katmanı gizlendi.`
   );
   return true;
 }
