@@ -13,6 +13,83 @@ type BuildingLayer = {
   filter?: unknown;
 };
 
+function addNeonRoads(map: MapLibreMap) {
+  const layers = map.getStyle().layers ?? [];
+  const roadLayers = layers.filter((layer) =>
+    layer.type === "line" &&
+    "source" in layer &&
+    "source-layer" in layer &&
+    layer["source-layer"] === "transportation"
+  );
+
+  if (roadLayers.length === 0) {
+    console.warn("Map Lab: Stil içinde transportation yol katmanı bulunamadı.");
+    return false;
+  }
+
+  const firstRoadCore = roadLayers.find((layer) =>
+    /^road_(motorway|trunk_primary|secondary_tertiary|minor|service_track|link|path)/i.test(layer.id) &&
+    !layer.id.endsWith("_casing")
+  ) ?? roadLayers[0];
+
+  const source = (firstRoadCore as LayerSpecification & { source: string }).source;
+  const sourceLayer = (firstRoadCore as LayerSpecification & { "source-layer": string })["source-layer"];
+
+  if (!map.getLayer("lab-road-glow")) {
+    map.addLayer({
+      id: "lab-road-glow",
+      type: "line",
+      source,
+      "source-layer": sourceLayer,
+      minzoom: 12.5,
+      filter: [
+        "match",
+        ["get", "class"],
+        ["motorway", "trunk", "primary", "secondary", "tertiary", "minor", "service", "track", "path", "pedestrian"],
+        true,
+        false
+      ],
+      layout: {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      paint: {
+        "line-color": "#00cfff",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 12.5, 2, 15, 5, 17, 9, 19, 13],
+        "line-blur": 3.5,
+        "line-opacity": 0.48
+      }
+    }, firstRoadCore.id);
+  }
+
+  const roadColors: Record<string, string> = {
+    road_motorway: "#65f4ff",
+    road_motorway_link: "#45dff5",
+    road_trunk_primary: "#45dff5",
+    road_link: "#29c9e8",
+    road_secondary_tertiary: "#20b8dc",
+    road_minor: "#168db8",
+    road_service_track: "#116b91",
+    road_path_pedestrian: "#28677d"
+  };
+
+  for (const layer of roadLayers) {
+    if (layer.id.endsWith("_casing")) {
+      map.setPaintProperty(layer.id, "line-color", "#061827");
+      map.setPaintProperty(layer.id, "line-opacity", 0.98);
+      continue;
+    }
+
+    const color = roadColors[layer.id];
+    if (color) {
+      map.setPaintProperty(layer.id, "line-color", color);
+      map.setPaintProperty(layer.id, "line-opacity", 0.96);
+    }
+  }
+
+  return true;
+}
+
 function addNeonBuildings(map: MapLibreMap) {
   const styleLayers = map.getStyle().layers ?? [];
   const existing = styleLayers.find((layer) =>
@@ -117,8 +194,9 @@ export default function App() {
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
 
     const onLoad = () => {
-      const added = addNeonBuildings(map);
-      setStatus(added ? "3D NEON AKTİF" : "HARİTA AÇIK · BİNA KATMANI BULUNAMADI");
+      const buildingsAdded = addNeonBuildings(map);
+      const roadsAdded = addNeonRoads(map);
+      setStatus(buildingsAdded && roadsAdded ? "3D NEON + YOL AKTİF" : "HARİTA AÇIK · KATMAN KONTROLÜ GEREKLİ");
     };
 
     const onError = (event: any) => {
