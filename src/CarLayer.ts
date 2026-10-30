@@ -2,148 +2,107 @@ import * as THREE from "three";
 import { MercatorCoordinate } from "maplibre-gl";
 import type { CustomLayerInterface, Map as MapLibreMap } from "maplibre-gl";
 
-const TEST_ORIGIN: [number, number] = [28.9742, 41.0045];
-const TEST_LENGTH_METERS = 15;
-const TEST_WIDTH_METERS = 8;
-const TEST_HEIGHT_METERS = 5;
-const TEST_CENTER_HEIGHT_METERS = 2.5;
+const BLOCK_LENGTH_METERS = 15;
+const BLOCK_WIDTH_METERS = 8;
+const BLOCK_HEIGHT_METERS = 5;
+const BLOCK_CENTER_HEIGHT_METERS = 2.5;
+const DEFAULT_BEARING_DEGREES = 90;
 
-export function createCarLayer(): CustomLayerInterface {
+export type InteractiveCarLayer = CustomLayerInterface & {
+  setPosition: (lngLat: [number, number], bearingDegrees?: number) => void;
+};
+
+export function createCarLayer(): InteractiveCarLayer {
   let renderer: THREE.WebGLRenderer | undefined;
   let mapRef: MapLibreMap | undefined;
   let renderLogged = false;
+  let currentLngLat: [number, number] = [0, 0];
+  let currentBearingDegrees = DEFAULT_BEARING_DEGREES;
 
   const scene = new THREE.Scene();
   const camera = new THREE.Camera();
-
-  // Aşama teşhisi: gerçek araç yerine 10 kat büyütülmüş, ışığa ihtiyaç
-  // duymayan mor blok. Böylece malzeme/ışık kaynaklı görünmezlik elenir.
-  const geometry = new THREE.BoxGeometry(
-    TEST_WIDTH_METERS,
-    TEST_LENGTH_METERS,
-    TEST_HEIGHT_METERS
-  );
+  const geometry = new THREE.BoxGeometry(BLOCK_WIDTH_METERS, BLOCK_LENGTH_METERS, BLOCK_HEIGHT_METERS);
   const material = new THREE.MeshBasicMaterial({
-    color: 0xb000ff,
-    side: THREE.DoubleSide,
-    depthTest: false,
-    depthWrite: false
+    color: 0xb000ff, side: THREE.DoubleSide, depthTest: false, depthWrite: false
   });
   const object = new THREE.Mesh(geometry, material);
   object.frustumCulled = false;
-  // Three.js katmanında Z dikey eksen; yaw dönüşü Z çevresinde uygulanır.
-  // 90° ile 15 m uzun kenar doğu-batı doğrultusuna döner.
-  object.rotation.z = Math.PI / 2;
   scene.add(object);
 
-  const layer: CustomLayerInterface = {
-    id: "3d-car-layer",
-    type: "custom",
-    renderingMode: "3d",
+  const updateObjectPosition = (lngLat: [number, number], bearingDegrees = DEFAULT_BEARING_DEGREES) => {
+    currentLngLat = [lngLat[0], lngLat[1]];
+    currentBearingDegrees = bearingDegrees;
+    if (!mapRef) return;
 
+    const ground = MercatorCoordinate.fromLngLat(currentLngLat, 0);
+    const meterScale = ground.meterInMercatorCoordinateUnits();
+    object.position.set(ground.x, ground.y, ground.z + BLOCK_CENTER_HEIGHT_METERS * meterScale);
+    // Bu custom layer'da Z dikey eksendir; 90° yaw, uzun kenarı doğu-batıya çevirir.
+    object.rotation.set(0, 0, THREE.MathUtils.degToRad(currentBearingDegrees));
+    object.scale.set(meterScale, -meterScale, meterScale);
+    object.updateMatrix();
+    object.updateMatrixWorld(true);
+
+    const bounds = new THREE.Box3().setFromObject(object);
+    const pixel = mapRef.project(currentLngLat);
+    console.info("[THREE PURPLE DEBUG] position updated", {
+      lngLat: currentLngLat, pixel: [pixel.x, pixel.y],
+      bearingDegrees: currentBearingDegrees,
+      dimensionsMeters: { length: BLOCK_LENGTH_METERS, width: BLOCK_WIDTH_METERS, height: BLOCK_HEIGHT_METERS },
+      centerHeightMeters: BLOCK_CENTER_HEIGHT_METERS,
+      objectPosition: object.position.toArray(), objectRotation: object.rotation.toArray(),
+      objectScale: object.scale.toArray(),
+      worldBounds: { min: bounds.min.toArray(), max: bounds.max.toArray() }
+    });
+    mapRef.triggerRepaint();
+  };
+
+  const layer: InteractiveCarLayer = {
+    id: "3d-car-layer", type: "custom", renderingMode: "3d",
+    setPosition(lngLat, bearingDegrees = DEFAULT_BEARING_DEGREES) {
+      updateObjectPosition(lngLat, bearingDegrees);
+    },
     onAdd(map: MapLibreMap, gl: WebGLRenderingContext | WebGL2RenderingContext) {
       mapRef = map;
-      renderer = new THREE.WebGLRenderer({
-        canvas: map.getCanvas(),
-        context: gl,
-        antialias: true,
-        alpha: true
-      });
+      renderer = new THREE.WebGLRenderer({ canvas: map.getCanvas(), context: gl, antialias: true, alpha: true });
       renderer.autoClear = false;
       renderer.setPixelRatio(1);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.NoToneMapping;
-
-      const ground = MercatorCoordinate.fromLngLat(TEST_ORIGIN, 0);
-      const meterScale = ground.meterInMercatorCoordinateUnits();
-
-      // Blok tabanı yol kotunda: merkez yüksekliği 2.5 m.
-      object.position.set(
-        ground.x,
-        ground.y,
-        ground.z + TEST_CENTER_HEIGHT_METERS * meterScale
-      );
-      object.scale.set(meterScale, -meterScale, meterScale);
-      object.updateMatrix();
-      object.updateMatrixWorld(true);
-
-      const bounds = new THREE.Box3().setFromObject(object);
-      const mapCenter = map.getCenter();
+      const center = map.getCenter();
+      updateObjectPosition([center.lng, center.lat], DEFAULT_BEARING_DEGREES);
       console.info("[THREE PURPLE DEBUG] onAdd", {
-        mapCenter: [mapCenter.lng, mapCenter.lat],
-        targetLngLat: TEST_ORIGIN,
-        centerLngLat: [ground.x, ground.y, ground.z],
-        targetPixel: (() => { const p = map.project(TEST_ORIGIN); return [p.x, p.y]; })(),
-        mercatorGround: [ground.x, ground.y, ground.z],
-        meterScale,
-        objectPosition: object.position.toArray(),
-        objectScale: object.scale.toArray(),
-        dimensionsMeters: {
-          length: TEST_LENGTH_METERS,
-          width: TEST_WIDTH_METERS,
-          height: TEST_HEIGHT_METERS
-        },
-        centerHeightMeters: TEST_CENTER_HEIGHT_METERS,
-        yawDegrees: 90,
-        rotationRadians: object.rotation.z,
-        worldBounds: {
-          min: bounds.min.toArray(),
-          max: bounds.max.toArray()
-        },
-        canvas: {
-          width: map.getCanvas().width,
-          height: map.getCanvas().height
-        }
+        initialLngLat: currentLngLat, initialBearingDegrees: currentBearingDegrees,
+        canvas: { width: map.getCanvas().width, height: map.getCanvas().height }
       });
-
       map.triggerRepaint();
     },
-
     render(_gl, options) {
       if (!renderer) return;
-
-      camera.projectionMatrix.fromArray(
-        Array.from(options.defaultProjectionData.mainMatrix)
-      );
+      camera.projectionMatrix.fromArray(Array.from(options.defaultProjectionData.mainMatrix));
       camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
       camera.matrixWorld.identity();
       camera.matrixWorldInverse.identity();
       camera.matrixAutoUpdate = false;
-
       renderer.resetState();
       renderer.render(scene, camera);
-
       if (!renderLogged) {
-        const clip = new THREE.Vector4(
-          object.position.x,
-          object.position.y,
-          object.position.z,
-          1
-        ).applyMatrix4(camera.projectionMatrix);
-        console.info("[THREE PURPLE DEBUG] render", {
+        const clip = new THREE.Vector4(object.position.x, object.position.y, object.position.z, 1)
+          .applyMatrix4(camera.projectionMatrix);
+        console.info("[THREE PURPLE DEBUG] first render", {
           clipPosition: clip.toArray(),
-          clipInsideView:
-            clip.w > 0 &&
-            Math.abs(clip.x) <= clip.w &&
-            Math.abs(clip.y) <= clip.w &&
-            Math.abs(clip.z) <= clip.w,
+          clipInsideView: clip.w > 0 && Math.abs(clip.x) <= clip.w &&
+            Math.abs(clip.y) <= clip.w && Math.abs(clip.z) <= clip.w,
           layerPresent: Boolean(mapRef?.getLayer("3d-car-layer")),
-          mapCenter: mapRef?.getCenter().toArray(),
-          targetLngLat: TEST_ORIGIN,
-          targetPixel: (() => { const p = mapRef!.project(TEST_ORIGIN); return [p.x, p.y]; })()
+          lngLat: currentLngLat, bearingDegrees: currentBearingDegrees
         });
         renderLogged = true;
       }
     },
-
     onRemove() {
-      geometry.dispose();
-      material.dispose();
-      renderer?.dispose();
-      renderer = undefined;
-      mapRef = undefined;
+      geometry.dispose(); material.dispose(); renderer?.dispose();
+      renderer = undefined; mapRef = undefined;
     }
   };
-
   return layer;
 }
