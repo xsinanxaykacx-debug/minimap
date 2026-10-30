@@ -349,7 +349,7 @@ export default function App() {
       map.addLayer(createCarLayer(), firstSymbol);
 
       setStatus(buildingsAdded && allBuildingLayersStyled && roadsAdded && environmentAdded
-        ? "3D NEON · THREE.JS ARAÇ SABİT"
+        ? "3D NEON · THREE.JS KÜP AKTİF"
         : "HARİTA AÇIK · KATMAN KONTROLÜ GEREKLİ");
     };
 
