@@ -108,7 +108,7 @@ export default function App() {
       pitch: 60,
       bearing: -20,
       maxPitch: 75,
-      antialias: true,
+      canvasContextAttributes: { antialias: true },
       attributionControl: { compact: true }
     });
 
