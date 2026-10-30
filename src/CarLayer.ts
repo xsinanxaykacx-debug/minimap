@@ -133,11 +133,11 @@ export function createCarLayer(): CustomLayerInterface {
       camera.matrixAutoUpdate = false;
       renderer.resetState();
       renderer.render(scene, camera);
-      mapRef?.triggerRepaint();
     },
     onRemove() {
       for (const item of geometry) item.dispose();
       for (const item of materials) item.dispose();
+      renderer?.dispose();
       renderer = undefined;
       mapRef = undefined;
     }
