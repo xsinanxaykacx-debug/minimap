@@ -2,7 +2,9 @@ import * as THREE from "three";
 import { MercatorCoordinate } from "maplibre-gl";
 import type { CustomLayerInterface, Map as MapLibreMap } from "maplibre-gl";
 
-const CAR_ORIGIN: [number, number] = [28.9769, 41.0086];
+const CAR_ORIGIN: [number, number] = [28.9768, 41.0054];
+const CAR_LENGTH_METERS = 4;
+const CAR_WIDTH_METERS = 2;
 
 function makeMaterial(color: number, emissive = 0, metalness = 0.45, roughness = 0.3) {
   return new THREE.MeshStandardMaterial({
@@ -31,19 +33,13 @@ export function createCarLayer(): CustomLayerInterface {
     return mesh;
   };
 
-  const bodyMat = makeMaterial(0x101e35, 0x001a28, 0.85, 0.22);
-  const glassMat = new THREE.MeshStandardMaterial({
-    color: 0x061a2c, emissive: 0x00394a, emissiveIntensity: 0.75,
-    metalness: 0.7, roughness: 0.12, transparent: true, opacity: 0.94
-  });
-  const cyanMat = new THREE.MeshStandardMaterial({
-    color: 0x00eaff, emissive: 0x00cfff, emissiveIntensity: 2.2,
-    metalness: 0.35, roughness: 0.2
-  });
-  const magentaMat = makeMaterial(0xff168f, 0xff087c, 0.35, 0.25);
+  const bodyMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+  const glassMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+  const cyanMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+  const magentaMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
   const rubberMat = makeMaterial(0x080d16, 0, 0.05, 0.85);
-  const headMat = makeMaterial(0xd9ffff, 0x80faff);
-  const rearMat = makeMaterial(0xff174f, 0xff003b);
+  const headMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const rearMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
 
   const box = (w: number, l: number, h: number, material: THREE.Material, x: number, y: number, z: number) => {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, l, h), material);
@@ -52,19 +48,19 @@ export function createCarLayer(): CustomLayerInterface {
   };
 
   // Gövde, burun +Y; başlangıçta kuzeye bakması için grup 180 derece döndürülür.
-  box(1.92, 4.25, 0.62, bodyMat, 0, 0, 0.72);
-  box(1.72, 2.0, 0.7, glassMat, 0, -0.05, 1.32);
-  box(1.82, 0.82, 0.16, bodyMat, 0, 1.55, 0.91);
-  box(1.82, 0.72, 0.13, bodyMat, 0, -1.68, 0.91);
-  box(1.98, 3.65, 0.07, cyanMat, 0, 0, 0.42);
-  box(2.02, 0.08, 0.12, cyanMat, 0, 1.92, 0.74);
-  box(2.02, 0.08, 0.12, rearMat, 0, -1.96, 0.75);
-  box(0.12, 3.1, 0.1, magentaMat, -0.98, 0, 0.76);
-  box(0.12, 3.1, 0.1, magentaMat, 0.98, 0, 0.76);
-  box(0.42, 0.12, 0.1, headMat, -0.62, 2.0, 0.72);
-  box(0.42, 0.12, 0.1, headMat, 0.62, 2.0, 0.72);
-  box(0.48, 0.12, 0.1, rearMat, -0.62, -2.0, 0.72);
-  box(0.48, 0.12, 0.1, rearMat, 0.62, -2.0, 0.72);
+  box(CAR_WIDTH_METERS, CAR_LENGTH_METERS, 0.72, bodyMat, 0, 0, 0.42);
+  box(1.65, 1.75, 0.48, glassMat, 0, -0.05, 1.02);
+  box(1.82, 0.55, 0.16, bodyMat, 0, 1.65, 0.55);
+  box(1.82, 0.45, 0.13, bodyMat, 0, -1.7, 0.55);
+  box(1.98, 3.85, 0.06, cyanMat, 0, 0, 0.79);
+  box(2.02, 0.08, 0.12, cyanMat, 0, 1.92, 0.55);
+  box(2.02, 0.08, 0.12, rearMat, 0, -1.96, 0.55);
+  box(0.12, 3.1, 0.1, magentaMat, -0.98, 0, 0.55);
+  box(0.12, 3.1, 0.1, magentaMat, 0.98, 0, 0.55);
+  box(0.42, 0.12, 0.1, headMat, -0.62, 2.0, 0.55);
+  box(0.42, 0.12, 0.1, headMat, 0.62, 2.0, 0.55);
+  box(0.48, 0.12, 0.1, rearMat, -0.62, -2.0, 0.55);
+  box(0.48, 0.12, 0.1, rearMat, 0.62, -2.0, 0.55);
 
   for (const x of [-1.02, 1.02]) {
     for (const y of [-1.28, 1.28]) {
@@ -83,14 +79,14 @@ export function createCarLayer(): CustomLayerInterface {
     new THREE.CircleGeometry(2.15, 48),
     new THREE.MeshBasicMaterial({ color: 0x00dfff, transparent: true, opacity: 0.17, depthWrite: false, side: THREE.DoubleSide })
   );
-  halo.position.z = 0.06;
+  halo.position.z = 0.035;
   addMesh(halo);
   for (const radius of [1.85, 2.05]) {
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(radius, radius + 0.035, 64),
       new THREE.MeshBasicMaterial({ color: 0x00eaff, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide })
     );
-    ring.position.z = 0.09;
+    ring.position.z = 0.045;
     addMesh(ring);
   }
 
@@ -118,14 +114,20 @@ export function createCarLayer(): CustomLayerInterface {
       renderer.autoClear = false;
       const mercator = MercatorCoordinate.fromLngLat({ lng: CAR_ORIGIN[0], lat: CAR_ORIGIN[1] }, 0);
       const scale = mercator.meterInMercatorCoordinateUnits();
-      car.position.set(mercator.x, mercator.y, mercator.z);
-      car.rotation.set(0, 0, Math.PI);
+      console.info("[3D CAR] Sultanahmet anchor", { lng: CAR_ORIGIN[0], lat: CAR_ORIGIN[1], mercator: { x: mercator.x, y: mercator.y, z: 0 }, sizeMeters: { length: CAR_LENGTH_METERS, width: CAR_WIDTH_METERS }, meterScale: scale });
+      car.position.set(mercator.x, mercator.y, 0);
+      car.rotation.set(0, 0, 0);
       car.scale.setScalar(scale);
       map.triggerRepaint();
     },
     render(_gl, options) {
       if (!renderer) return;
-      const mvp = new THREE.Matrix4().fromArray(Array.from(options.modelViewProjectionMatrix));
+      const matrixValues = Array.from(options.modelViewProjectionMatrix);
+      const mvp = new THREE.Matrix4().fromArray(matrixValues);
+      if (!(layer as CustomLayerInterface & { __matrixLogged?: boolean }).__matrixLogged) {
+        console.info("[3D CAR] MapLibre MVP matrix", matrixValues);
+        (layer as CustomLayerInterface & { __matrixLogged?: boolean }).__matrixLogged = true;
+      }
       camera.projectionMatrix.copy(mvp);
       camera.projectionMatrixInverse.copy(mvp).invert();
       camera.matrixWorld.identity();
