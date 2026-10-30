@@ -317,6 +317,8 @@ export default function App() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const keyboardCleanupRef = useRef<(() => void) | null>(null);
+  const vehicleRef = useRef({ position: INITIAL_CENTER as [number, number], heading: 0 });
   const [mode, setMode] = useState<"3d" | "2d">("3d");
   const [status, setStatus] = useState("HARİTA YÜKLENİYOR");
   const [driveSpeed, setDriveSpeed] = useState(0);
@@ -373,6 +375,12 @@ export default function App() {
       window.addEventListener("keydown", onKeyDown);
       window.addEventListener("keyup", onKeyUp);
       window.addEventListener("blur", onBlur);
+      keyboardCleanupRef.current = () => {
+        window.removeEventListener("keydown", onKeyDown);
+        window.removeEventListener("keyup", onKeyUp);
+        window.removeEventListener("blur", onBlur);
+        keys.clear();
+      };
 
       const animate = (time: number) => {
         if (!previousTime) previousTime = time;
@@ -406,6 +414,7 @@ export default function App() {
           ];
         }
 
+        vehicleRef.current = { position: [...position], heading };
         if (distanceMeters !== 0 || steering !== 0) {
           carLayer.setPosition(position, heading);
           // Harita, aracın arkasından üçüncü şahıs kamerası gibi takip eder.
@@ -443,9 +452,8 @@ export default function App() {
         window.cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-      window.removeEventListener("blur", onBlur);
+      keyboardCleanupRef.current?.();
+      keyboardCleanupRef.current = null;
       map.remove();
       mapRef.current = null;
     };
@@ -462,11 +470,11 @@ export default function App() {
 
   function resetView() {
     mapRef.current?.flyTo({
-      center: INITIAL_CENTER,
+      center: vehicleRef.current.position,
       zoom: INITIAL_ZOOM,
       pitch: mode === "3d" ? 60 : 0,
-      bearing: 0,
-      duration: 1100
+      bearing: vehicleRef.current.heading,
+      duration: 900
     });
   }
 
