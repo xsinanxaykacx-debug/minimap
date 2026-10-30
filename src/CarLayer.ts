@@ -2,11 +2,11 @@ import * as THREE from "three";
 import { MercatorCoordinate } from "maplibre-gl";
 import type { CustomLayerInterface, Map as MapLibreMap } from "maplibre-gl";
 
-const TEST_ORIGIN: [number, number] = [28.9745, 41.0035];
-const TEST_LENGTH_METERS = 40;
-const TEST_WIDTH_METERS = 20;
-const TEST_HEIGHT_METERS = 10;
-const TEST_CENTER_HEIGHT_METERS = TEST_HEIGHT_METERS / 2;
+const TEST_ORIGIN: [number, number] = [28.9742, 41.0045];
+const TEST_LENGTH_METERS = 15;
+const TEST_WIDTH_METERS = 8;
+const TEST_HEIGHT_METERS = 5;
+const TEST_CENTER_HEIGHT_METERS = 2.5;
 
 export function createCarLayer(): CustomLayerInterface {
   let renderer: THREE.WebGLRenderer | undefined;
@@ -31,6 +31,9 @@ export function createCarLayer(): CustomLayerInterface {
   });
   const object = new THREE.Mesh(geometry, material);
   object.frustumCulled = false;
+  // Three.js katmanında Z dikey eksen; yaw dönüşü Z çevresinde uygulanır.
+  // 90° ile 15 m uzun kenar doğu-batı doğrultusuna döner.
+  object.rotation.z = Math.PI / 2;
   scene.add(object);
 
   const layer: CustomLayerInterface = {
@@ -54,7 +57,7 @@ export function createCarLayer(): CustomLayerInterface {
       const ground = MercatorCoordinate.fromLngLat(TEST_ORIGIN, 0);
       const meterScale = ground.meterInMercatorCoordinateUnits();
 
-      // Blok tabanı yol kotunda: merkez yüksekliği, bloğun yarı yüksekliği.
+      // Blok tabanı yol kotunda: merkez yüksekliği 2.5 m.
       object.position.set(
         ground.x,
         ground.y,
@@ -69,6 +72,7 @@ export function createCarLayer(): CustomLayerInterface {
       console.info("[THREE PURPLE DEBUG] onAdd", {
         mapCenter: [mapCenter.lng, mapCenter.lat],
         targetLngLat: TEST_ORIGIN,
+        centerLngLat: [ground.x, ground.y, ground.z],
         targetPixel: (() => { const p = map.project(TEST_ORIGIN); return [p.x, p.y]; })(),
         mercatorGround: [ground.x, ground.y, ground.z],
         meterScale,
@@ -80,6 +84,8 @@ export function createCarLayer(): CustomLayerInterface {
           height: TEST_HEIGHT_METERS
         },
         centerHeightMeters: TEST_CENTER_HEIGHT_METERS,
+        yawDegrees: 90,
+        rotationRadians: object.rotation.z,
         worldBounds: {
           min: bounds.min.toArray(),
           max: bounds.max.toArray()
@@ -122,7 +128,9 @@ export function createCarLayer(): CustomLayerInterface {
             Math.abs(clip.y) <= clip.w &&
             Math.abs(clip.z) <= clip.w,
           layerPresent: Boolean(mapRef?.getLayer("3d-car-layer")),
-          mapCenter: mapRef?.getCenter().toArray()
+          mapCenter: mapRef?.getCenter().toArray(),
+          targetLngLat: TEST_ORIGIN,
+          targetPixel: (() => { const p = mapRef!.project(TEST_ORIGIN); return [p.x, p.y]; })()
         });
         renderLogged = true;
       }
