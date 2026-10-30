@@ -16,134 +16,110 @@ type BuildingLayer = {
 function addNeonRoads(map: MapLibreMap) {
   const styleLayers = map.getStyle().layers ?? [];
 
-  // Liberty'de kara yolu, köprü ve tünel çizgileri aynı vector source-layer'da.
-  // Demiryolu, transit ve hatching katmanlarını yol paletine dahil etmiyoruz.
+  // Önceki denemelerden kalmış yol neon/glow katmanlarını tamamen kaldır.
+  for (const id of ["neon-roads-core", "neon-roads-glow", "lab-road-glow"]) {
+    if (map.getLayer(id)) map.removeLayer(id);
+  }
+
+  // Liberty'nin araç yolu, köprü ve tünel katmanları.
   const roadLayers = styleLayers.filter((layer) => {
     if (
       layer.type !== "line" ||
-      !("source" in layer) ||
-      !("source-layer" in layer) ||
+      !( "source" in layer) ||
+      !( "source-layer" in layer) ||
       layer["source-layer"] !== "transportation"
-    ) {
-      return false;
-    }
+    ) return false;
 
     const id = layer.id.toLowerCase();
-    return (
-      /(road|highway|bridge|tunnel)/.test(id) &&
-      !/(rail|transit|hatching)/.test(id)
-    );
+    return /(road|highway|bridge|tunnel)/.test(id) &&
+      !/(rail|transit|hatching)/.test(id);
   });
 
   if (roadLayers.length === 0) {
-    console.warn("Map Lab: Liberty içinde yol çizgi katmanı bulunamadı.");
+    console.warn("Map Lab: Liberty içinde araç yolu katmanı bulunamadı.");
     return false;
   }
 
-  const casingLayers = roadLayers.filter((layer) =>
-    layer.id.toLowerCase().endsWith("_casing")
-  );
-  const coreLayers = roadLayers.filter(
-    (layer) => !layer.id.toLowerCase().endsWith("_casing")
-  );
+  const isCasing = (id: string) => /_casing$/.test(id.toLowerCase());
+  const isPedestrian = (id: string) =>
+    /(pedestrian|footway|path|steps)/.test(id.toLowerCase());
 
-  const coreColor = (id: string): string => {
+  // Araç yollarının iç yüzeyi: gerçekçi, sınıfa göre farklı koyulukta asfalt.
+  const asphaltColor = (id: string): string => {
     const lower = id.toLowerCase();
-    const isTunnel = lower.includes("tunnel");
+    const tunnel = lower.includes("tunnel");
 
-    // Tüneller aynı renk ailesinde, fakat daha koyu ve daha düşük parlaklıkta.
-    if (isTunnel) {
-      if (/motorway|trunk_primary/.test(lower)) return "#1689a8";
-      if (/secondary_tertiary|link/.test(lower)) return "#116f91";
-      if (/minor/.test(lower)) return "#0d526f";
-      if (/service_track/.test(lower)) return "#0a4059";
-      if (/path_pedestrian|pedestrian|street/.test(lower)) return "#17465a";
-      return "#116f91";
-    }
-
-    // Köprüler normal yollarla aynı paleti kullanır.
-    if (/motorway|trunk_primary/.test(lower)) return "#65f4ff";
-    if (/secondary_tertiary|link/.test(lower)) return "#25c9e8";
-    if (/minor/.test(lower)) return "#168db8";
-    if (/service_track/.test(lower)) return "#116b91";
-    if (/path_pedestrian|pedestrian|street/.test(lower)) return "#28677d";
-    return "#20b8dc";
+    if (isPedestrian(lower)) return "#171f29";
+    if (/motorway|trunk_primary/.test(lower)) return tunnel ? "#27313b" : "#3a4652";
+    if (/secondary_tertiary|link/.test(lower)) return tunnel ? "#222c36" : "#303b47";
+    if (/minor/.test(lower)) return tunnel ? "#1d2731" : "#29343f";
+    if (/service_track/.test(lower)) return "#202a34";
+    if (/street/.test(lower)) return "#252f3a";
+    return "#2c3540";
   };
 
-  // Dış kenarlar: Liberty'nin açık sarı/beyaz casing çizgilerini söndür.
-  for (const layer of casingLayers) {
-    map.setPaintProperty(layer.id, "line-color", "#061827");
+  let neonCasingCount = 0;
+  let asphaltCount = 0;
+
+  for (const layer of roadLayers) {
+    const pedestrian = isPedestrian(layer.id);
+
+    if (isCasing(layer.id)) {
+      // Araç yollarında yalnızca casing dış kenarı cyan; yaya alanları neon değil.
+      map.setPaintProperty(
+        layer.id,
+        "line-color",
+        pedestrian ? "#171f29" : "#00eaff"
+      );
+      map.setPaintProperty(
+        layer.id,
+        "line-opacity",
+        pedestrian ? 0.98 : 0.96
+      );
+      if (!pedestrian) neonCasingCount++;
+      else {
+        // Geniş yaya casing'leri meydanlarda beyaz/aydınlık leke oluşturmasın.
+        map.setPaintProperty(layer.id, "line-width", [
+          "interpolate", ["linear"], ["zoom"],
+          14, 0.45, 16, 0.75, 18, 1.1, 20, 1.5
+        ]);
+      }
+      continue;
+    }
+
+    map.setPaintProperty(layer.id, "line-color", asphaltColor(layer.id));
     map.setPaintProperty(layer.id, "line-opacity", 1);
-  }
+    asphaltCount++;
 
-  // Merkez çizgiler: yol sınıfına göre cyan -> koyu mavi paleti.
-  for (const layer of coreLayers) {
-    map.setPaintProperty(layer.id, "line-color", coreColor(layer.id));
-    map.setPaintProperty(layer.id, "line-opacity", 0.98);
-
-    const id = layer.id.toLowerCase();
-    if (/path_pedestrian|pedestrian/.test(id)) {
-      // Meydan ve yaya yollarının geniş, parlak lekelere dönüşmesini önle.
+    if (pedestrian) {
+      // Sultanahmet gibi meydanlarda yaya çizgilerini ince ve asfalt tonunda tut.
       map.setPaintProperty(layer.id, "line-width", [
         "interpolate", ["linear"], ["zoom"],
-        14, 0.35,
-        16, 0.65,
-        18, 1.05,
-        20, 1.5
+        13, 0.25, 15, 0.4, 17, 0.7, 20, 1.1
       ]);
-      map.setPaintProperty(layer.id, "line-opacity", 0.78);
-    } else if (/service_track/.test(id)) {
-      map.setPaintProperty(layer.id, "line-opacity", 0.86);
     }
   }
 
-  // Önceki deneysel glow katmanı bütün yolları ikinci kez kalın çiziyordu.
-  // Eski adı varsa kaldır; yalnızca ana arterlere düşük yoğunluklu glow ekle.
-  if (map.getLayer("lab-road-glow")) {
-    map.removeLayer("lab-road-glow");
-  }
-
-  const firstRoadLayer = roadLayers[0] as LayerSpecification & {
-    source: string;
-    "source-layer": string;
-  };
-
-  if (!map.getLayer("neon-roads-glow")) {
-    map.addLayer({
-      id: "neon-roads-glow",
-      type: "line",
-      source: firstRoadLayer.source,
-      "source-layer": firstRoadLayer["source-layer"],
-      minzoom: 13.5,
-      filter: [
-        "in",
-        ["get", "class"],
-        ["literal", ["motorway", "trunk", "primary", "secondary"]]
-      ],
-      layout: {
-        "line-cap": "round",
-        "line-join": "round"
-      },
-      paint: {
-        "line-color": "#00cfff",
-        "line-width": [
-          "interpolate", ["linear"], ["zoom"],
-          13.5, 2,
-          16, 4.5,
-          18, 7
-        ],
-        "line-blur": 2.8,
-        "line-opacity": 0.24
-      }
-    }, firstRoadLayer.id);
+  // Bazı Liberty sürümlerinde meydan/yaya alanları transportation line değil,
+  // ayrı fill poligonlarıdır. Beyaz alanları koyu asfalt tonuna çek.
+  let pedestrianFillCount = 0;
+  for (const layer of styleLayers) {
+    const id = layer.id.toLowerCase();
+    if (
+      layer.type === "fill" &&
+      /(pedestrian|footway|plaza|square|pedestrian_area)/.test(id)
+    ) {
+      map.setPaintProperty(layer.id, "fill-color", "#202a34");
+      map.setPaintProperty(layer.id, "fill-opacity", 0.98);
+      pedestrianFillCount++;
+    }
   }
 
   console.info(
-    `Map Lab: ${coreLayers.length} yol merkezi, ${casingLayers.length} casing katmanı neon paletine geçirildi.`
+    `Map Lab: ${asphaltCount} asfalt yol merkezi, ${neonCasingCount} cyan yol kenarı, ${pedestrianFillCount} koyu yaya alanı.`
   );
   return true;
 }
-
 
 function addNeonEnvironment(map: MapLibreMap) {
   const layers = map.getStyle().layers ?? [];
@@ -174,10 +150,10 @@ function addNeonEnvironment(map: MapLibreMap) {
       /(park|grass|wood|forest|garden|meadow|recreation_ground|vegetation|scrub|orchard|village_green)/.test(id);
 
     if (isGreen && layer.type === "fill") {
-      map.setPaintProperty(layer.id, "fill-color", "#16452b");
+      map.setPaintProperty(layer.id, "fill-color", "#2c8a4b");
       map.setPaintProperty(layer.id, "fill-opacity", 0.94);
       if (map.getPaintProperty(layer.id, "fill-outline-color") !== undefined) {
-        map.setPaintProperty(layer.id, "fill-outline-color", "#1d633b");
+        map.setPaintProperty(layer.id, "fill-outline-color", "#3eb86e");
       }
       greenCount++;
       continue;
