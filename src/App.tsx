@@ -109,7 +109,7 @@ export default function App() {
       bearing: -20,
       maxPitch: 75,
       antialias: true,
-      attributionControl: true
+      attributionControl: { compact: true }
     });
 
     mapRef.current = map;
@@ -120,7 +120,7 @@ export default function App() {
       setStatus(added ? "3D NEON AKTİF" : "HARİTA AÇIK · BİNA KATMANI BULUNAMADI");
     };
 
-    const onError = (event: { error?: Error }) => {
+    const onError = (event: any) => {
       console.error("MapLibre:", event.error);
       setStatus("HARİTA HATASI");
     };
