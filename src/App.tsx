@@ -348,6 +348,13 @@ export default function App() {
       if (!map.getLayer("3d-car-layer")) {
         const firstSymbol = map.getStyle().layers?.find((layer) => layer.type === "symbol")?.id;
         map.addLayer(createCarLayer(), firstSymbol);
+
+        const orderedIds = (map.getStyle().layers ?? []).map((layer) => layer.id);
+        console.info("[3D CAR] Layer order", {
+          carIndex: orderedIds.indexOf("3d-car-layer"),
+          extrusionIndex: orderedIds.indexOf("lab-buildings-extrusion"),
+          renderedAfterBuildings: orderedIds.indexOf("3d-car-layer") > orderedIds.indexOf("lab-buildings-extrusion")
+        });
       }
 
       setStatus(buildingsAdded && allBuildingLayersStyled && roadsAdded && environmentAdded
