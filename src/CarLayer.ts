@@ -118,7 +118,7 @@ export function createCarLayer(): CustomLayerInterface {
         Array.from(options.modelViewProjectionMatrix)
       );
       const inverseModel = car.matrixWorld.clone().invert();
-      const viewProjection = mapMvp.multiply(inverseModel);
+      const viewProjection = mapMvp.clone().multiply(inverseModel);
 
       camera.projectionMatrix.copy(viewProjection);
       camera.projectionMatrixInverse.copy(viewProjection).invert();
