@@ -144,6 +144,70 @@ function addNeonRoads(map: MapLibreMap) {
   return true;
 }
 
+
+function addNeonEnvironment(map: MapLibreMap) {
+  const layers = map.getStyle().layers ?? [];
+  let groundCount = 0;
+  let greenCount = 0;
+  let waterCount = 0;
+
+  for (const layer of layers) {
+    const id = layer.id.toLowerCase();
+
+    // Su katmanları önce ele alınır; kıyı/nehir çizgileri de koyulaştırılır.
+    if (/(^|[_-])(water|ocean|sea|river|lake|waterway)([_-]|$)/.test(id)) {
+      if (layer.type === "fill") {
+        map.setPaintProperty(layer.id, "fill-color", "#081b2e");
+        map.setPaintProperty(layer.id, "fill-opacity", 0.98);
+        waterCount++;
+      } else if (layer.type === "line") {
+        map.setPaintProperty(layer.id, "line-color", "#0b2940");
+        map.setPaintProperty(layer.id, "line-opacity", 0.9);
+        waterCount++;
+      }
+      continue;
+    }
+
+    // Park, çimen, orman, bahçe ve benzeri yeşil alanlar.
+    // Landuse içindeki park/grass alanları da bu gruba girer.
+    const isGreen =
+      /(park|grass|wood|forest|garden|meadow|recreation_ground|vegetation|scrub|orchard|village_green)/.test(id);
+
+    if (isGreen && layer.type === "fill") {
+      map.setPaintProperty(layer.id, "fill-color", "#16452b");
+      map.setPaintProperty(layer.id, "fill-opacity", 0.94);
+      if (map.getPaintProperty(layer.id, "fill-outline-color") !== undefined) {
+        map.setPaintProperty(layer.id, "fill-outline-color", "#1d633b");
+      }
+      greenCount++;
+      continue;
+    }
+
+    // Ana zemin ve yapılaşmış alan poligonları.
+    // Yeşil ve su katmanları yukarıda ayrıldığı için bunların rengini ezmez.
+    const isGround =
+      id === "background" ||
+      id === "land" ||
+      /^(landcover|landuse|land-)/.test(id) ||
+      /(residential|commercial|industrial|construction|urban|sand|rock|bare_rock)/.test(id);
+
+    if (isGround && layer.type === "background") {
+      map.setPaintProperty(layer.id, "background-color", "#050b16");
+      groundCount++;
+    } else if (isGround && layer.type === "fill") {
+      map.setPaintProperty(layer.id, "fill-color", "#0a1220");
+      map.setPaintProperty(layer.id, "fill-opacity", 0.96);
+      groundCount++;
+    }
+  }
+
+  console.info(
+    `Map Lab: zemin ${groundCount}, yeşil alan ${greenCount}, su ${waterCount} katmanı gece paletine geçirildi.`
+  );
+
+  return { groundCount, greenCount, waterCount };
+}
+
 function addNeonBuildings(map: MapLibreMap) {
   const styleLayers = map.getStyle().layers ?? [];
   const existing = styleLayers.find((layer) =>
@@ -250,7 +314,9 @@ export default function App() {
     const onLoad = () => {
       const buildingsAdded = addNeonBuildings(map);
       const roadsAdded = addNeonRoads(map);
-      setStatus(buildingsAdded && roadsAdded ? "3D NEON + YOL AKTİF" : "HARİTA AÇIK · KATMAN KONTROLÜ GEREKLİ");
+      const environment = addNeonEnvironment(map);
+      const environmentAdded = environment.groundCount + environment.greenCount + environment.waterCount > 0;
+      setStatus(buildingsAdded && roadsAdded && environmentAdded ? "3D NEON · YOL · ZEMİN AKTİF" : "HARİTA AÇIK · KATMAN KONTROLÜ GEREKLİ");
     };
 
     const onError = (event: any) => {
