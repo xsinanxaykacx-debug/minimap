@@ -69,17 +69,17 @@ export function createCarLayer(): CustomLayerInterface {
   const headlightMaterial = makeMaterial(0xc8ffff, 0.2, 0.12);
   const rearLightMaterial = makeMaterial(0xff2b9d, 0.2, 0.16);
 
-  // Aracın burnu -Y yönünde (Mercator'da kuzey). Modelin toplamı 4 x 2 metre.
+  // Yerel +Y yönü Mercator'da kuzeye baktığı için aracın burnu +Y yönündedir. Modelin toplamı 4 x 2 metre.
   addBox(1.72, 3.65, 0.48, bodyMaterial, 0, 0, 0.66);
   addBox(1.48, 1.85, 0.66, glassMaterial, 0, 0.05, 1.18);
-  addBox(1.55, 0.12, 0.045, trimMaterial, 0, -1.82, 0.66);
-  addBox(1.55, 0.10, 0.045, trimMaterial, 0, 1.82, 0.66);
+  addBox(1.55, 0.12, 0.045, trimMaterial, 0, 1.82, 0.66);
+  addBox(1.55, 0.10, 0.045, trimMaterial, 0, -1.82, 0.66);
 
   // Ön farlar ve arka stoplar.
-  addBox(0.34, 0.10, 0.12, headlightMaterial, -0.58, -1.84, 0.68);
-  addBox(0.34, 0.10, 0.12, headlightMaterial, 0.58, -1.84, 0.68);
-  addBox(0.32, 0.10, 0.12, rearLightMaterial, -0.58, 1.84, 0.68);
-  addBox(0.32, 0.10, 0.12, rearLightMaterial, 0.58, 1.84, 0.68);
+  addBox(0.34, 0.10, 0.12, headlightMaterial, -0.58, 1.84, 0.68);
+  addBox(0.34, 0.10, 0.12, headlightMaterial, 0.58, 1.84, 0.68);
+  addBox(0.32, 0.10, 0.12, rearLightMaterial, -0.58, -1.84, 0.68);
+  addBox(0.32, 0.10, 0.12, rearLightMaterial, 0.58, -1.84, 0.68);
 
   // Dört tekerleğin tabanı z=0 düzlemine oturur.
   addWheel(-0.92, -1.22);
