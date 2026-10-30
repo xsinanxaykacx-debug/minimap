@@ -147,7 +147,7 @@ function addNeonEnvironment(map: MapLibreMap) {
     // Park, çimen, orman, bahçe ve benzeri yeşil alanlar.
     // Landuse içindeki park/grass alanları da bu gruba girer.
     const isGreen =
-      /(park|grass|wood|forest|garden|meadow|recreation_ground|vegetation|scrub|orchard|village_green)/.test(id);
+      /(park|grass|wood|forest|garden|courtyard|meadow|recreation_ground|vegetation|scrub|orchard|village_green)/.test(id);
 
     if (isGreen && layer.type === "fill") {
       map.setPaintProperty(layer.id, "fill-color", "#2c8a4b");
