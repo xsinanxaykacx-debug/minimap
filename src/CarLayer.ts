@@ -69,7 +69,7 @@ export function createCarLayer(): CustomLayerInterface {
       console.info("[THREE PURPLE DEBUG] onAdd", {
         mapCenter: [mapCenter.lng, mapCenter.lat],
         targetLngLat: TEST_ORIGIN,
-        targetPixel: map.project(TEST_ORIGIN).toArray(),
+        targetPixel: (() => { const p = map.project(TEST_ORIGIN); return [p.x, p.y]; })(),
         mercatorGround: [ground.x, ground.y, ground.z],
         meterScale,
         objectPosition: object.position.toArray(),
