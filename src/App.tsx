@@ -4,7 +4,7 @@ import type { Map as MapLibreMap, LayerSpecification } from "maplibre-gl";
 import { createCarLayer } from "./CarLayer";
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
-const INITIAL_CENTER: [number, number] = [28.9745, 41.0035];
+const INITIAL_CENTER: [number, number] = [28.9742, 41.0045];
 const INITIAL_ZOOM = 20.5;
 
 type BuildingLayer = {
