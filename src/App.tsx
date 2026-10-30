@@ -351,7 +351,7 @@ export default function App() {
       console.info("[MAP LAB] Test objesi katmanı eklendi", {
         layer: map.getLayer("3d-car-layer"),
         center: map.getCenter().toArray(),
-        targetPixel: map.project(INITIAL_CENTER).toArray()
+        targetPixel: (() => { const p = map.project(INITIAL_CENTER); return [p.x, p.y]; })()
       });
 
       setStatus(buildingsAdded && allBuildingLayersStyled && roadsAdded && environmentAdded
