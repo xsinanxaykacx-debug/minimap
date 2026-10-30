@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import type { Map as MapLibreMap, LayerSpecification } from "maplibre-gl";
-import { createCarLayer } from "./CarLayer";
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 const INITIAL_CENTER: [number, number] = [28.9768, 41.0054];
@@ -344,18 +343,33 @@ export default function App() {
       const environment = addNeonEnvironment(map);
       const environmentAdded = environment.groundCount + environment.greenCount + environment.waterCount > 0;
 
-      // Three.js aracı, harita sembollerinin altında; bina/yol 3D derinliğiyle aynı GL bağlamında.
-      if (!map.getLayer("3d-car-layer")) {
-        const firstSymbol = map.getStyle().layers?.find((layer) => layer.type === "symbol")?.id;
-        map.addLayer(createCarLayer(), firstSymbol);
+      // Three.js custom layer devre dışı: koordinat testi için MapLibre HTML Marker.
+      const markerElement = document.createElement("div");
+      markerElement.style.width = "50px";
+      markerElement.style.height = "50px";
+      markerElement.style.backgroundColor = "#FFFF00";
+      markerElement.style.borderRadius = "50%";
+      markerElement.style.boxShadow = "0 0 20px #FFFF00, 0 0 40px rgba(255,255,0,0.75)";
+      markerElement.style.border = "3px solid #ffffff";
+      markerElement.style.boxSizing = "border-box";
+      markerElement.style.zIndex = "9999";
+      markerElement.setAttribute("aria-label", "Sultanahmet koordinat test işareti");
 
-        const orderedIds = (map.getStyle().layers ?? []).map((layer) => layer.id);
-        console.info("[3D CAR] Layer order", {
-          carIndex: orderedIds.indexOf("3d-car-layer"),
-          extrusionIndex: orderedIds.indexOf("lab-buildings-extrusion"),
-          renderedAfterBuildings: orderedIds.indexOf("3d-car-layer") > orderedIds.indexOf("lab-buildings-extrusion")
-        });
-      }
+      const debugMarker = new maplibregl.Marker({
+        element: markerElement,
+        anchor: "center"
+      })
+        .setLngLat([28.9768, 41.0054])
+        .addTo(map);
+
+      console.info("[HTML MARKER TEST] Eklendi", {
+        markerLngLat: [28.9768, 41.0054],
+        mapCenter: map.getCenter().toArray(),
+        markerElement
+      });
+
+      // React bileşeni kaldırılırken marker da temizlensin.
+      (map as MapLibreMap & { __debugMarker?: maplibregl.Marker }).__debugMarker = debugMarker;
 
       setStatus(buildingsAdded && allBuildingLayersStyled && roadsAdded && environmentAdded
         ? "3D NEON · THREE.JS ARAÇ SABİT"
@@ -373,6 +387,7 @@ export default function App() {
     return () => {
       map.off("load", onLoad);
       map.off("error", onError);
+      (map as MapLibreMap & { __debugMarker?: maplibregl.Marker }).__debugMarker?.remove();
       map.remove();
       mapRef.current = null;
     };
