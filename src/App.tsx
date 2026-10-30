@@ -3,7 +3,8 @@ import * as maplibregl from "maplibre-gl";
 import type { Map as MapLibreMap, LayerSpecification } from "maplibre-gl";
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
-const INITIAL_CENTER: [number, number] = [28.9784, 41.0084];
+const INITIAL_CENTER: [number, number] = [28.9769, 41.0086];
+const INITIAL_ZOOM = 16.7;
 
 type BuildingLayer = {
   id: string;
@@ -104,7 +105,7 @@ export default function App() {
       container: mapContainer.current,
       style: STYLE_URL,
       center: INITIAL_CENTER,
-      zoom: 15,
+      zoom: INITIAL_ZOOM,
       pitch: 60,
       bearing: -20,
       maxPitch: 75,
@@ -148,7 +149,7 @@ export default function App() {
   function resetView() {
     mapRef.current?.flyTo({
       center: INITIAL_CENTER,
-      zoom: 15,
+      zoom: INITIAL_ZOOM,
       pitch: mode === "3d" ? 60 : 0,
       bearing: mode === "3d" ? -20 : 0,
       duration: 1100
