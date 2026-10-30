@@ -344,12 +344,18 @@ export default function App() {
       const environment = addNeonEnvironment(map);
       const environmentAdded = environment.groundCount + environment.greenCount + environment.waterCount > 0;
 
-      // Three.js custom layer: Sultanahmet üzerinde 50 m sarı test küpü.
+      // Three.js custom layer: Sultanahmet üzerinde 10 kat büyütülmüş mor görünürlük bloğu.
       const firstSymbol = map.getStyle().layers?.find((layer) => layer.type === "symbol")?.id;
       map.addLayer(createCarLayer(), firstSymbol);
+      map.easeTo({ center: INITIAL_CENTER, zoom: INITIAL_ZOOM, pitch: 25, bearing: 0, duration: 0 });
+      console.info("[MAP LAB] Test objesi katmanı eklendi", {
+        layer: map.getLayer("3d-car-layer"),
+        center: map.getCenter().toArray(),
+        targetPixel: map.project(INITIAL_CENTER).toArray()
+      });
 
       setStatus(buildingsAdded && allBuildingLayersStyled && roadsAdded && environmentAdded
-        ? "3D NEON · THREE.JS KÜP AKTİF"
+        ? "TEŞHİS · THREE.JS MOR BLOK"
         : "HARİTA AÇIK · KATMAN KONTROLÜ GEREKLİ");
     };
 
