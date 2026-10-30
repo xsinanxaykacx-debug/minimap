@@ -4,8 +4,8 @@ import type { Map as MapLibreMap, LayerSpecification } from "maplibre-gl";
 import { createCarLayer, type InteractiveCarLayer } from "./CarLayer";
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
-const INITIAL_CENTER: [number, number] = [28.9742, 41.0045];
-const INITIAL_ZOOM = 20.5;
+const INITIAL_CENTER: [number, number] = [28.975982, 41.002128];
+const INITIAL_ZOOM = 19.5;
 
 type BuildingLayer = {
   id: string;
@@ -316,10 +316,10 @@ function addNeonBuildings(map: MapLibreMap) {
 export default function App() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
-  const clickHandlerRef = useRef<((event: maplibregl.MapMouseEvent) => void) | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
   const [mode, setMode] = useState<"3d" | "2d">("3d");
   const [status, setStatus] = useState("HARİTA YÜKLENİYOR");
-  const [placedAt, setPlacedAt] = useState<[number, number] | null>(null);
+  const [driveSpeed, setDriveSpeed] = useState(0);
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
@@ -329,7 +329,7 @@ export default function App() {
       style: STYLE_URL,
       center: INITIAL_CENTER,
       zoom: INITIAL_ZOOM,
-      pitch: 25,
+      pitch: 60,
       bearing: 0,
       maxPitch: 75,
       canvasContextAttributes: { antialias: true },
@@ -346,24 +346,86 @@ export default function App() {
       const environment = addNeonEnvironment(map);
       const environmentAdded = environment.groundCount + environment.greenCount + environment.waterCount > 0;
 
-      // Click-to-Place: tıklanan lng/lat doğrudan Three.js bloğuna aktarılır.
+      // Gerçek geometrili araç: başlangıç koordinatı sabit, tıklama ile taşıma kapalı.
       const firstSymbol = map.getStyle().layers?.find((layer) => layer.type === "symbol")?.id;
       const carLayer: InteractiveCarLayer = createCarLayer();
       map.addLayer(carLayer, firstSymbol);
-      const onMapClick = (event: maplibregl.MapMouseEvent) => {
-        const clicked: [number, number] = [event.lngLat.lng, event.lngLat.lat];
-        const bearing = 90;
-        carLayer.setPosition(clicked, bearing);
-        setPlacedAt(clicked);
-        console.info("[MAP LAB] Click-to-Place", {
-          clickedLngLat: clicked, mapBearing: map.getBearing(), objectBearing: bearing
-        });
+      let position: [number, number] = [...INITIAL_CENTER];
+      let heading = 0;
+      let speed = 0;
+      let previousTime = 0;
+      let lastUiUpdate = 0;
+      const keys = new Set<string>();
+      carLayer.setPosition(position, heading);
+      map.jumpTo({ center: position, zoom: INITIAL_ZOOM, pitch: 60, bearing: heading });
+
+      const onKeyDown = (event: KeyboardEvent) => {
+        const key = event.key.toLowerCase();
+        if (["w", "a", "s", "d"].includes(key)) {
+          event.preventDefault();
+          keys.add(key);
+        }
       };
-      map.on("click", onMapClick);
-      clickHandlerRef.current = onMapClick;
-      setStatus(buildingsAdded && allBuildingLayersStyled && roadsAdded && environmentAdded
-        ? "TEŞHİS · TIKLAYARAK YERLEŞTİR"
-        : "HARİTA AÇIK · KATMAN KONTROLÜ GEREKLİ");
+      const onKeyUp = (event: KeyboardEvent) => {
+        keys.delete(event.key.toLowerCase());
+      };
+      const onBlur = () => keys.clear();
+      window.addEventListener("keydown", onKeyDown);
+      window.addEventListener("keyup", onKeyUp);
+      window.addEventListener("blur", onBlur);
+
+      const animate = (time: number) => {
+        if (!previousTime) previousTime = time;
+        const dt = Math.min((time - previousTime) / 1000, 0.05);
+        previousTime = time;
+
+        const throttle = (keys.has("w") ? 1 : 0) - (keys.has("s") ? 1 : 0);
+        if (throttle !== 0) {
+          speed += throttle * 5.0 * dt;
+        } else {
+          speed *= Math.exp(-1.8 * dt);
+        }
+        speed = Math.max(-4, Math.min(12, speed));
+        if (Math.abs(speed) < 0.025) speed = 0;
+
+        const steering = (keys.has("d") ? 1 : 0) - (keys.has("a") ? 1 : 0);
+        if (steering !== 0) {
+          const steeringFactor = Math.max(0.22, Math.min(1, Math.abs(speed) / 3));
+          heading = (heading + steering * 82 * steeringFactor * dt + 360) % 360;
+        }
+
+        const distanceMeters = speed * dt;
+        if (distanceMeters !== 0) {
+          const radians = heading * Math.PI / 180;
+          const northMeters = Math.cos(radians) * distanceMeters;
+          const eastMeters = Math.sin(radians) * distanceMeters;
+          const latitudeRadians = position[1] * Math.PI / 180;
+          position = [
+            position[0] + eastMeters / (111320 * Math.max(0.01, Math.cos(latitudeRadians))),
+            position[1] + northMeters / 111320
+          ];
+        }
+
+        if (distanceMeters !== 0 || steering !== 0) {
+          carLayer.setPosition(position, heading);
+          // Harita, aracın arkasından üçüncü şahıs kamerası gibi takip eder.
+          map.jumpTo({
+            center: position,
+            zoom: INITIAL_ZOOM,
+            pitch: 60,
+            bearing: heading
+          });
+        }
+
+        if (time - lastUiUpdate > 150) {
+          setDriveSpeed(speed);
+          lastUiUpdate = time;
+        }
+        animationFrameRef.current = window.requestAnimationFrame(animate);
+      };
+
+      animationFrameRef.current = window.requestAnimationFrame(animate);
+      setStatus("SÜRÜŞ MODU · WASD AKTİF");
     };
 
     const onError = (event: any) => {
@@ -377,8 +439,13 @@ export default function App() {
     return () => {
       map.off("load", onLoad);
       map.off("error", onError);
-      if (clickHandlerRef.current) map.off("click", clickHandlerRef.current);
-      clickHandlerRef.current = null;
+      if (animationFrameRef.current !== null) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
       map.remove();
       mapRef.current = null;
     };
@@ -397,7 +464,7 @@ export default function App() {
     mapRef.current?.flyTo({
       center: INITIAL_CENTER,
       zoom: INITIAL_ZOOM,
-      pitch: mode === "3d" ? 25 : 0,
+      pitch: mode === "3d" ? 60 : 0,
       bearing: 0,
       duration: 1100
     });
@@ -409,13 +476,12 @@ export default function App() {
       <div className="vignette" aria-hidden="true" />
       <div style={{
         position: "absolute", zIndex: 5, top: 76, left: 16,
-        maxWidth: "calc(100% - 32px)", padding: "9px 12px",
-        border: "1px solid rgba(0,234,255,0.55)", borderRadius: 8,
-        background: "rgba(5,11,22,0.88)", color: "#e8faff",
-        fontSize: 12, lineHeight: 1.45, pointerEvents: "none"
+        padding: "10px 13px", border: "1px solid rgba(174,0,255,0.65)",
+        borderRadius: 8, background: "rgba(5,11,22,0.9)", color: "#f1ddff",
+        fontSize: 12, lineHeight: 1.5, pointerEvents: "none"
       }}>
-        <strong>Teşhis:</strong> Yerleştirmek istediğiniz noktaya tıklayın.
-        {placedAt && <span> Yerleşti: {placedAt[0].toFixed(6)}, {placedAt[1].toFixed(6)}</span>}
+        <strong>SÜRÜŞ MODU</strong> · W: ileri · S: geri/fren · A/D: direksiyon
+        <div>Hız: {Math.abs(driveSpeed).toFixed(1)} m/sn</div>
       </div>
       <header className="topbar">
         <div className="brand">
