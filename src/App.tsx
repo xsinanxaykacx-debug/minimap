@@ -14,25 +14,24 @@ type BuildingLayer = {
 };
 
 function addNeonRoads(map: MapLibreMap) {
-  const styleLayers = map.getStyle().layers ?? [];
-
-  // Önceki denemelerden kalmış yol neon/glow katmanlarını tamamen kaldır.
+  // Önceki denemelerden kalmış bütün yol neon/glow katmanlarını kaldır.
   for (const id of ["neon-roads-core", "neon-roads-glow", "lab-road-glow"]) {
     if (map.getLayer(id)) map.removeLayer(id);
   }
 
-  // Liberty'nin araç yolu, köprü ve tünel katmanları.
+  // Katman listesini kaldırma işleminden SONRA al; silinen glow referansı kalmasın.
+  const styleLayers = map.getStyle().layers ?? [];
   const roadLayers = styleLayers.filter((layer) => {
     if (
       layer.type !== "line" ||
-      !( "source" in layer) ||
-      !( "source-layer" in layer) ||
+      !("source" in layer) ||
+      !("source-layer" in layer) ||
       layer["source-layer"] !== "transportation"
     ) return false;
 
     const id = layer.id.toLowerCase();
     return /(road|highway|bridge|tunnel)/.test(id) &&
-      !/(rail|transit|hatching)/.test(id);
+      !/(rail|transit|hatching|neon-roads|lab-road)/.test(id);
   });
 
   if (roadLayers.length === 0) {
@@ -44,11 +43,9 @@ function addNeonRoads(map: MapLibreMap) {
   const isPedestrian = (id: string) =>
     /(pedestrian|footway|path|steps)/.test(id.toLowerCase());
 
-  // Araç yollarının iç yüzeyi: gerçekçi, sınıfa göre farklı koyulukta asfalt.
   const asphaltColor = (id: string): string => {
     const lower = id.toLowerCase();
     const tunnel = lower.includes("tunnel");
-
     if (isPedestrian(lower)) return "#171f29";
     if (/motorway|trunk_primary/.test(lower)) return tunnel ? "#27313b" : "#3a4652";
     if (/secondary_tertiary|link/.test(lower)) return tunnel ? "#222c36" : "#303b47";
@@ -65,20 +62,12 @@ function addNeonRoads(map: MapLibreMap) {
     const pedestrian = isPedestrian(layer.id);
 
     if (isCasing(layer.id)) {
-      // Araç yollarında yalnızca casing dış kenarı cyan; yaya alanları neon değil.
-      map.setPaintProperty(
-        layer.id,
-        "line-color",
-        pedestrian ? "#171f29" : "#00eaff"
-      );
-      map.setPaintProperty(
-        layer.id,
-        "line-opacity",
-        pedestrian ? 0.98 : 0.96
-      );
-      if (!pedestrian) neonCasingCount++;
-      else {
-        // Geniş yaya casing'leri meydanlarda beyaz/aydınlık leke oluşturmasın.
+      // Araç yollarında dış kenar cyan; yaya casing'i asfalt tonunda kalır.
+      map.setPaintProperty(layer.id, "line-color", pedestrian ? "#171f29" : "#00eaff");
+      map.setPaintProperty(layer.id, "line-opacity", pedestrian ? 0.98 : 0.96);
+      if (!pedestrian) {
+        neonCasingCount++;
+      } else {
         map.setPaintProperty(layer.id, "line-width", [
           "interpolate", ["linear"], ["zoom"],
           14, 0.45, 16, 0.75, 18, 1.1, 20, 1.5
@@ -92,7 +81,6 @@ function addNeonRoads(map: MapLibreMap) {
     asphaltCount++;
 
     if (pedestrian) {
-      // Sultanahmet gibi meydanlarda yaya çizgilerini ince ve asfalt tonunda tut.
       map.setPaintProperty(layer.id, "line-width", [
         "interpolate", ["linear"], ["zoom"],
         13, 0.25, 15, 0.4, 17, 0.7, 20, 1.1
@@ -100,15 +88,11 @@ function addNeonRoads(map: MapLibreMap) {
     }
   }
 
-  // Bazı Liberty sürümlerinde meydan/yaya alanları transportation line değil,
-  // ayrı fill poligonlarıdır. Beyaz alanları koyu asfalt tonuna çek.
+  // Ayrı fill poligonları olarak tanımlanan meydan/yaya alanlarını koyulaştır.
   let pedestrianFillCount = 0;
   for (const layer of styleLayers) {
     const id = layer.id.toLowerCase();
-    if (
-      layer.type === "fill" &&
-      /(pedestrian|footway|plaza|square|pedestrian_area)/.test(id)
-    ) {
+    if (layer.type === "fill" && /(pedestrian|footway|plaza|square|pedestrian_area)/.test(id)) {
       map.setPaintProperty(layer.id, "fill-color", "#202a34");
       map.setPaintProperty(layer.id, "fill-opacity", 0.98);
       pedestrianFillCount++;
@@ -119,6 +103,43 @@ function addNeonRoads(map: MapLibreMap) {
     `Map Lab: ${asphaltCount} asfalt yol merkezi, ${neonCasingCount} cyan yol kenarı, ${pedestrianFillCount} koyu yaya alanı.`
   );
   return true;
+}
+
+
+function styleAllBuildingLayers(map: MapLibreMap) {
+  const buildingLayers = (map.getStyle().layers ?? []).filter((layer) =>
+    /building/i.test(layer.id)
+  );
+
+  let darkFillCount = 0;
+  let darkExtrusionCount = 0;
+  let cyanOutlineCount = 0;
+
+  for (const layer of buildingLayers) {
+    if (layer.type === "fill") {
+      // Liberty'nin standart, anıtsal ve kamusal bina poligonlarının tamamı.
+      map.setPaintProperty(layer.id, "fill-color", "#102238");
+      map.setPaintProperty(layer.id, "fill-opacity", 1);
+      if (map.getPaintProperty(layer.id, "fill-outline-color") !== undefined) {
+        map.setPaintProperty(layer.id, "fill-outline-color", "#00eaff");
+      }
+      darkFillCount++;
+    } else if (layer.type === "fill-extrusion") {
+      // Mevcut 3D hacmi koru; sadece gövde rengini tek lacivert palete sabitle.
+      map.setPaintProperty(layer.id, "fill-extrusion-color", "#102238");
+      darkExtrusionCount++;
+    } else if (layer.type === "line") {
+      // Stil tarafından ayrıca çizilen bina konturları da neon cyan olsun.
+      map.setPaintProperty(layer.id, "line-color", "#00eaff");
+      map.setPaintProperty(layer.id, "line-opacity", 0.9);
+      cyanOutlineCount++;
+    }
+  }
+
+  console.info(
+    `Map Lab: ${darkFillCount} bina fill, ${darkExtrusionCount} 3D extrusion, ${cyanOutlineCount} cyan bina outline katmanı işlendi.`
+  );
+  return buildingLayers.length > 0;
 }
 
 function addNeonEnvironment(map: MapLibreMap) {
@@ -289,10 +310,11 @@ export default function App() {
 
     const onLoad = () => {
       const buildingsAdded = addNeonBuildings(map);
+      const allBuildingLayersStyled = styleAllBuildingLayers(map);
       const roadsAdded = addNeonRoads(map);
       const environment = addNeonEnvironment(map);
       const environmentAdded = environment.groundCount + environment.greenCount + environment.waterCount > 0;
-      setStatus(buildingsAdded && roadsAdded && environmentAdded ? "3D NEON · YOL · ZEMİN AKTİF" : "HARİTA AÇIK · KATMAN KONTROLÜ GEREKLİ");
+      setStatus(buildingsAdded && allBuildingLayersStyled && roadsAdded && environmentAdded ? "3D NEON · YOL · ZEMİN AKTİF" : "HARİTA AÇIK · KATMAN KONTROLÜ GEREKLİ");
     };
 
     const onError = (event: any) => {
