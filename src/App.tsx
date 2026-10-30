@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import type { Map as MapLibreMap, LayerSpecification } from "maplibre-gl";
+import { createCarLayer } from "./CarLayer";
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 const INITIAL_CENTER: [number, number] = [28.9769, 41.0086];
@@ -342,7 +343,16 @@ export default function App() {
       const roadsAdded = addNeonRoads(map);
       const environment = addNeonEnvironment(map);
       const environmentAdded = environment.groundCount + environment.greenCount + environment.waterCount > 0;
-      setStatus(buildingsAdded && allBuildingLayersStyled && roadsAdded && environmentAdded ? "3D NEON · YOL · ZEMİN AKTİF" : "HARİTA AÇIK · KATMAN KONTROLÜ GEREKLİ");
+
+      // Three.js aracı, harita sembollerinin altında; bina/yol 3D derinliğiyle aynı GL bağlamında.
+      if (!map.getLayer("3d-car-layer")) {
+        const firstSymbol = map.getStyle().layers?.find((layer) => layer.type === "symbol")?.id;
+        map.addLayer(createCarLayer(), firstSymbol);
+      }
+
+      setStatus(buildingsAdded && allBuildingLayersStyled && roadsAdded && environmentAdded
+        ? "3D NEON · THREE.JS ARAÇ SABİT"
+        : "HARİTA AÇIK · KATMAN KONTROLÜ GEREKLİ");
     };
 
     const onError = (event: any) => {
