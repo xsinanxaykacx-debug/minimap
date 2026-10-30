@@ -2,11 +2,11 @@ import * as THREE from "three";
 import { MercatorCoordinate } from "maplibre-gl";
 import type { CustomLayerInterface, Map as MapLibreMap } from "maplibre-gl";
 
-const TEST_ORIGIN: [number, number] = [28.9768, 41.0054];
+const TEST_ORIGIN: [number, number] = [28.9745, 41.0035];
 const TEST_LENGTH_METERS = 40;
 const TEST_WIDTH_METERS = 20;
 const TEST_HEIGHT_METERS = 10;
-const TEST_CENTER_HEIGHT_METERS = 6;
+const TEST_CENTER_HEIGHT_METERS = TEST_HEIGHT_METERS / 2;
 
 export function createCarLayer(): CustomLayerInterface {
   let renderer: THREE.WebGLRenderer | undefined;
@@ -54,7 +54,7 @@ export function createCarLayer(): CustomLayerInterface {
       const ground = MercatorCoordinate.fromLngLat(TEST_ORIGIN, 0);
       const meterScale = ground.meterInMercatorCoordinateUnits();
 
-      // Nesne zeminin 1–11 m üstünde; hiçbir bina/zemin içine gömülmez.
+      // Blok tabanı yol kotunda: merkez yüksekliği, bloğun yarı yüksekliği.
       object.position.set(
         ground.x,
         ground.y,
