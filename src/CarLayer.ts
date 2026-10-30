@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { MercatorCoordinate } from "maplibre-gl";
 import type { CustomLayerInterface, Map as MapLibreMap } from "maplibre-gl";
 
 const CAR_ORIGIN: [number, number] = [28.9769, 41.0086];
@@ -115,14 +116,14 @@ export function createCarLayer(): CustomLayerInterface {
         alpha: true
       });
       renderer.autoClear = false;
-      const mercator = maplibreglMercator(map);
+      const mercator = MercatorCoordinate.fromLngLat({ lng: CAR_ORIGIN[0], lat: CAR_ORIGIN[1] }, 0);
       const scale = mercator.meterInMercatorCoordinateUnits();
       car.position.set(mercator.x, mercator.y, mercator.z);
       car.rotation.set(0, 0, Math.PI);
       car.scale.setScalar(scale);
       map.triggerRepaint();
     },
-    render(gl, options) {
+    render(_gl, options) {
       if (!renderer) return;
       const mvp = new THREE.Matrix4().fromArray(Array.from(options.modelViewProjectionMatrix));
       camera.projectionMatrix.copy(mvp);
@@ -145,31 +146,3 @@ export function createCarLayer(): CustomLayerInterface {
   return layer;
 }
 
-function maplibreglMercator(map: MapLibreMap) {
-  return maplibreCoordinate(map);
-}
-
-function maplibreCoordinate(map: MapLibreMap) {
-  // MapLibre exposes MercatorCoordinate on its namespace; use the map center's
-  // exact projected coordinate so the Three.js model shares the map's world space.
-  const center = map.getCenter();
-  const coordinate = (map as unknown as {
-    transform: { locationPoint: (lngLat: [number, number]) => unknown };
-  }).transform;
-  void coordinate;
-  return maplibreMercatorCoordinate(center.lng, center.lat);
-}
-
-function maplibreMercatorCoordinate(lng: number, lat: number) {
-  const earthCircumference = 40075016.68557849;
-  const x = (lng + 180) / 360;
-  const sin = Math.sin((lat * Math.PI) / 180);
-  const y = 0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI);
-  const latitudeRadians = (lat * Math.PI) / 180;
-  return {
-    x,
-    y,
-    z: 0,
-    meterInMercatorCoordinateUnits: () => 1 / (earthCircumference * Math.cos(latitudeRadians))
-  };
-}
