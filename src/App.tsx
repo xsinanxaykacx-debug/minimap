@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import type { Map as MapLibreMap, LayerSpecification } from "maplibre-gl";
-import { createCarLayer } from "./CarLayer";
+import { createCarLayer, type InteractiveCarLayer } from "./CarLayer";
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 const INITIAL_CENTER: [number, number] = [28.9742, 41.0045];
@@ -316,8 +316,10 @@ function addNeonBuildings(map: MapLibreMap) {
 export default function App() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const clickHandlerRef = useRef<((event: maplibregl.MapMouseEvent) => void) | null>(null);
   const [mode, setMode] = useState<"3d" | "2d">("3d");
   const [status, setStatus] = useState("HARİTA YÜKLENİYOR");
+  const [placedAt, setPlacedAt] = useState<[number, number] | null>(null);
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
@@ -344,18 +346,23 @@ export default function App() {
       const environment = addNeonEnvironment(map);
       const environmentAdded = environment.groundCount + environment.greenCount + environment.waterCount > 0;
 
-      // Three.js custom layer: Sultanahmet üzerinde 10 kat büyütülmüş mor görünürlük bloğu.
+      // Click-to-Place: tıklanan lng/lat doğrudan Three.js bloğuna aktarılır.
       const firstSymbol = map.getStyle().layers?.find((layer) => layer.type === "symbol")?.id;
-      map.addLayer(createCarLayer(), firstSymbol);
-      map.easeTo({ center: INITIAL_CENTER, zoom: INITIAL_ZOOM, pitch: 25, bearing: 0, duration: 0 });
-      console.info("[MAP LAB] Test objesi katmanı eklendi", {
-        layer: map.getLayer("3d-car-layer"),
-        center: map.getCenter().toArray(),
-        targetPixel: (() => { const p = map.project(INITIAL_CENTER); return [p.x, p.y]; })()
-      });
-
+      const carLayer: InteractiveCarLayer = createCarLayer();
+      map.addLayer(carLayer, firstSymbol);
+      const onMapClick = (event: maplibregl.MapMouseEvent) => {
+        const clicked: [number, number] = [event.lngLat.lng, event.lngLat.lat];
+        const bearing = 90;
+        carLayer.setPosition(clicked, bearing);
+        setPlacedAt(clicked);
+        console.info("[MAP LAB] Click-to-Place", {
+          clickedLngLat: clicked, mapBearing: map.getBearing(), objectBearing: bearing
+        });
+      };
+      map.on("click", onMapClick);
+      clickHandlerRef.current = onMapClick;
       setStatus(buildingsAdded && allBuildingLayersStyled && roadsAdded && environmentAdded
-        ? "TEŞHİS · THREE.JS MOR BLOK"
+        ? "TEŞHİS · TIKLAYARAK YERLEŞTİR"
         : "HARİTA AÇIK · KATMAN KONTROLÜ GEREKLİ");
     };
 
@@ -370,6 +377,8 @@ export default function App() {
     return () => {
       map.off("load", onLoad);
       map.off("error", onError);
+      if (clickHandlerRef.current) map.off("click", clickHandlerRef.current);
+      clickHandlerRef.current = null;
       map.remove();
       mapRef.current = null;
     };
@@ -398,6 +407,16 @@ export default function App() {
     <main className="app-shell">
       <div className="map-frame" ref={mapContainer} />
       <div className="vignette" aria-hidden="true" />
+      <div style={{
+        position: "absolute", zIndex: 5, top: 76, left: 16,
+        maxWidth: "calc(100% - 32px)", padding: "9px 12px",
+        border: "1px solid rgba(0,234,255,0.55)", borderRadius: 8,
+        background: "rgba(5,11,22,0.88)", color: "#e8faff",
+        fontSize: 12, lineHeight: 1.45, pointerEvents: "none"
+      }}>
+        <strong>Teşhis:</strong> Yerleştirmek istediğiniz noktaya tıklayın.
+        {placedAt && <span> Yerleşti: {placedAt[0].toFixed(6)}, {placedAt[1].toFixed(6)}</span>}
+      </div>
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">A</span>
