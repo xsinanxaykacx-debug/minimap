@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import maplibregl, { type Map as MapLibreMap, type LayerSpecification } from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
+import type { Map as MapLibreMap, LayerSpecification } from "maplibre-gl";
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 const INITIAL_CENTER: [number, number] = [28.9784, 41.0084];
