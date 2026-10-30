@@ -4,8 +4,8 @@ import type { Map as MapLibreMap, LayerSpecification } from "maplibre-gl";
 import { createCarLayer } from "./CarLayer";
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
-const INITIAL_CENTER: [number, number] = [28.9769, 41.0086];
-const INITIAL_ZOOM = 16.7;
+const INITIAL_CENTER: [number, number] = [28.9768, 41.0054];
+const INITIAL_ZOOM = 20.5;
 
 type BuildingLayer = {
   id: string;
@@ -327,8 +327,8 @@ export default function App() {
       style: STYLE_URL,
       center: INITIAL_CENTER,
       zoom: INITIAL_ZOOM,
-      pitch: 60,
-      bearing: -20,
+      pitch: 25,
+      bearing: 0,
       maxPitch: 75,
       canvasContextAttributes: { antialias: true },
       attributionControl: { compact: true }
@@ -374,8 +374,8 @@ export default function App() {
   function changeMode(nextMode: "2d" | "3d") {
     setMode(nextMode);
     mapRef.current?.easeTo({
-      pitch: nextMode === "3d" ? 60 : 0,
-      bearing: nextMode === "3d" ? -20 : 0,
+      pitch: nextMode === "3d" ? 25 : 0,
+      bearing: 0,
       duration: 900
     });
   }
@@ -384,8 +384,8 @@ export default function App() {
     mapRef.current?.flyTo({
       center: INITIAL_CENTER,
       zoom: INITIAL_ZOOM,
-      pitch: mode === "3d" ? 60 : 0,
-      bearing: mode === "3d" ? -20 : 0,
+      pitch: mode === "3d" ? 25 : 0,
+      bearing: 0,
       duration: 1100
     });
   }
