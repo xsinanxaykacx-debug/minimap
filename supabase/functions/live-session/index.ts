@@ -91,15 +91,9 @@ Deno.serve(async (req: Request) => {
       const admin = createClient(supabaseUrl, serviceKey, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
-      const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      const { data, error } = await admin
-        .from("live_sessions")
-        .update({ ended_at: new Date().toISOString() })
-        .is("ended_at", null)
-        .lt("last_seen_at", cutoff)
-        .select("id");
+      const { data, error } = await admin.rpc("cleanup_stale_live_sessions");
       if (error) return json({ error: "Stale session cleanup failed" }, 500);
-      return json({ cleaned: data?.length ?? 0 });
+      return json({ cleaned: data ?? 0 });
     }
 
     const authHeader = req.headers.get("Authorization") ?? "";
