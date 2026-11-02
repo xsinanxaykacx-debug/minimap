@@ -117,7 +117,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const action = body?.action;
 
-    if (action === "start" || action === "heartbeat") {
+    if (action === "start" || action === "heartbeat" || action === "my_raw_location") {
       const { data: profile, error: profileError } = await admin
         .from("profiles")
         .select("status")
