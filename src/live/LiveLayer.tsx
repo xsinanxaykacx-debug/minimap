@@ -450,18 +450,22 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
             <>
               {!publisherSession ? (
                 <>
-                  <small>Konum: Yayın başlatılırken GPS üzerinden alınacak</small>
-                  <button className="secondary" disabled={cameraGranted || busy} onClick={() => void grantCamera()}>
-                    {cameraGranted ? 'Kamera İzni Verildi' : 'Kamera İzni Ver'}
-                  </button>
-                  <button disabled={busy || !!viewerSession || !cameraGranted} onClick={() => void startBroadcast()}>
-                    {busy ? 'Hazırlanıyor…' : 'Yayına Başla'}
-                  </button>
+                  <div className="live-layer-mobile-actions">
+                    <small>Konum: Yayın başlatılırken GPS üzerinden alınacak</small>
+                    <button className="secondary" disabled={cameraGranted || busy} onClick={() => void grantCamera()}>
+                      {cameraGranted ? 'Kamera İzni Verildi' : 'Kamera İzni Ver'}
+                    </button>
+                    <button disabled={busy || !!viewerSession || !cameraGranted} onClick={() => void startBroadcast()}>
+                      {busy ? 'Hazırlanıyor…' : 'Yayına Başla'}
+                    </button>
+                  </div>
                 </>
               ) : (
                 <>
-                  <small>{publisher.status}</small>
-                  <button className="danger" disabled={busy} onClick={() => void endBroadcast()}>Yayını Bitir</button>
+                  <div className="live-layer-mobile-actions">
+                    <small>{publisher.status}</small>
+                    <button className="danger" disabled={busy} onClick={() => void endBroadcast()}>Yayını Bitir</button>
+                  </div>
                 </>
               )}
               {viewerSession && (
