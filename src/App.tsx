@@ -161,7 +161,7 @@ function App() {
         renderVisibleMarkers()
         
       })
-      .catch(error => {
+      .catch(() => {
         if (cancelled) return
       })
     return () => {
