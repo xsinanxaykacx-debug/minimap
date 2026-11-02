@@ -203,6 +203,7 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
   const videoRef = useRef<HTMLVideoElement>(null)
   const publisherVideoRef = useRef<HTMLVideoElement>(null)
   const publisher = useBroadcast(supabase, publisherSession?.room_id ?? null, clientId, publisherStream)
+  const localPreviewStream = publisher.localStream ?? grantedStream
   const viewer = useViewer(supabase, viewerSession?.room_id ?? null, clientId)
 
   useEffect(() => {
@@ -278,10 +279,10 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
   useEffect(() => {
     const video = publisherVideoRef.current
     if (!video) return
-    video.srcObject = publisher.localStream
-    if (publisher.localStream) void video.play().catch(() => undefined)
+    video.srcObject = localPreviewStream
+    if (localPreviewStream) void video.play().catch(() => undefined)
     return () => { video.pause(); video.srcObject = null }
-  }, [publisher.localStream])
+  }, [localPreviewStream])
 
   useEffect(() => {
     if (!publisherSession || !supabase) return
@@ -445,6 +446,7 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
               {!publisherSession ? (
                 <>
                   <small>Konum: Yayın başlatılırken GPS üzerinden alınacak</small>
+                  {grantedStream && <div className="live-viewer-panel live-publisher-preview"><div className="live-layer-heading"><strong>KAMERA ÖNİZLEMESİ</strong><span>YAYIN ÖNCESİ</span></div><video ref={publisherVideoRef} autoPlay muted playsInline /></div>}
                   <button className="secondary" disabled={cameraGranted || busy} onClick={() => void grantCamera()}>
                     {cameraGranted ? 'Kamera İzni Verildi' : 'Kamera İzni Ver'}
                   </button>
