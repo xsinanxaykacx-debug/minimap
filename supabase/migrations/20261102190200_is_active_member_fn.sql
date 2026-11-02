@@ -1,9 +1,8 @@
--- ROLLBACK SQL (manual; do not run as part of deployment rollback):
+-- ROLLBACK SQL (manual; do not run automatically):
 -- REVOKE EXECUTE ON FUNCTION public.is_active_member() FROM authenticated;
 -- DROP FUNCTION IF EXISTS public.is_active_member();
 --
--- SECURITY DEFINER is narrowly scoped to a boolean membership predicate.
--- Fixed search_path and qualified names prevent search_path shadowing.
+-- profiles.status is the only membership source of truth.
 
 CREATE OR REPLACE FUNCTION public.is_active_member()
 RETURNS boolean
@@ -16,8 +15,7 @@ AS $$
     SELECT 1
     FROM public.profiles AS p
     WHERE p.id = (SELECT auth.uid())
-      AND p.membership_status = 'active'
-      AND p.status::text = 'active'
+      AND p.status = 'active'::public.member_status
   );
 $$;
 
