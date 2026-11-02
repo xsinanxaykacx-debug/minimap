@@ -119,7 +119,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const sessionId = crypto.randomUUID();
-      const stableKey = user.id + ":" + pin_id;
+      // Per-session salt prevents the same user/pin from reusing a stable public offset.\n      const stableKey = user.id + ":" + pin_id + ":" + sessionId;
       const publicPoint = await jitterPoint(lat, lng, stableKey, jitterSecret);
 
       const { error: rawError } = await admin
