@@ -101,7 +101,7 @@ export function useBroadcast(
       void supabase.removeChannel(channel)
     }
   }, [supabase, roomId, publisherId, stream])
-  return { status }
+  return { status, localStream: stream }
 }
 
 export function useViewer(
@@ -193,6 +193,7 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
   const [busy, setBusy] = useState(false)
   const markersRef = useRef<Marker[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
+  const publisherVideoRef = useRef<HTMLVideoElement>(null)
   const publisher = useBroadcast(supabase, publisherSession?.room_id ?? null, clientId, publisherStream)
   const viewer = useViewer(supabase, viewerSession?.room_id ?? null, clientId)
 
@@ -265,6 +266,14 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
   useEffect(() => {
     if (videoRef.current) videoRef.current.srcObject = viewer.remoteStream
   }, [viewer.remoteStream])
+
+  useEffect(() => {
+    const video = publisherVideoRef.current
+    if (!video) return
+    video.srcObject = publisher.localStream
+    if (publisher.localStream) void video.play().catch(() => undefined)
+    return () => { video.pause(); video.srcObject = null }
+  }, [publisher.localStream])
 
   useEffect(() => {
     if (!publisherSession || !supabase) return
@@ -373,6 +382,10 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
               ) : (
                 <>
                   <small>{publisher.status}</small>
+                  <div className="live-viewer-panel live-publisher-preview">
+                    <div className="live-layer-heading"><strong>KENDİ YAYINIM</strong><span>YAYINCI ÖNİZLEMESİ</span></div>
+                    <video ref={publisherVideoRef} autoPlay muted playsInline />
+                  </div>
                   <button className="danger" disabled={busy} onClick={() => void endBroadcast()}>Yayını Bitir</button>
                 </>
               )}
