@@ -3,13 +3,10 @@ import maplibregl, { type Map as MapLibreMap, type Marker } from 'maplibre-gl'
 import Hls from 'hls.js'
 import LiveLayer from './live/LiveLayer'
 import {
-  Activity, Camera, Crosshair, Map as MapIcon, Layers3, Settings2, SlidersHorizontal,
-  ShieldCheck, ChevronDown, MapPinned, Menu, Minus, Plus, Search, Signal, X,
+  Activity, Crosshair, Minus, Plus, Search, Settings2, UserRound,
 } from 'lucide-react'
 
 type CameraRecord = { id: string; name: string; lat: number; lng: number; videoUrl: string }
-type LayerKey = 'reports' | 'cameras'
-const initialLayers: Record<LayerKey, boolean> = { reports: true, cameras: true }
 const mapStyle = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 const cameraEndpoint = import.meta.env.VITE_IBB_CAMERA_PROXY_URL || 'https://aytar-ibb-cameras.xsinanxaykacx.workers.dev/'
 
@@ -71,9 +68,6 @@ function MapCanvas({ onReady }: { onReady: (map: MapLibreMap) => void }) {
 function App() {
   const mapRef = useRef<MapLibreMap | null>(null)
   const markersRef = useRef<Marker[]>([])
-  const [layers, setLayers] = useState(initialLayers)
-  const [activeTool, setActiveTool] = useState('map')
-  const [menuOpen, setMenuOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [mapReady, setMapReady] = useState(false)
   const [cameraCount, setCameraCount] = useState(0)
@@ -87,7 +81,7 @@ function App() {
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !mapReady || !layers.cameras) {
+    if (!map || !mapReady) {
       markersRef.current.forEach(marker => marker.remove())
       markersRef.current = []
       return
@@ -186,12 +180,8 @@ function App() {
       markersRef.current.forEach(marker => marker.remove())
       markersRef.current = []
     }
-  }, [layers.cameras, mapReady])
+  }, [mapReady])
 
-  const toggleLayer = (key: LayerKey) => {
-    setLayers(current => ({ ...current, [key]: !current[key] }))
-    
-  }
   const zoom = (delta: number) => mapRef.current?.zoomTo((mapRef.current.getZoom() || 11) + delta, { duration: 350 })
   const locate = () => {
     if (!navigator.geolocation) {  return }
@@ -206,41 +196,22 @@ function App() {
 
   return (
     <main className="app-shell">
-      <header className="topbar">
-        <div className="brand-lockup"><div className="brand-mark"><Activity size={21} strokeWidth={2.4} /></div><div><div className="brand-name">AYTAR <span>LAB</span></div><div className="brand-subtitle">DAİMA İLERİ</div></div></div>
-        <div className="header-search"><Search size={16} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Konum veya adres ara…" /></div>
-        <div className="topbar-actions"><div className="connection"><span className="pulse-dot" /> <span>{mapReady ? 'HARİTA AKTİF' : 'BAĞLANIYOR'}</span></div><button className="icon-button mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menüyü aç"><Menu size={19} /></button><button className="profile-button" title="Laboratuvar profili">SA</button></div>
-      </header>
-      <section className="workspace">
-        <aside className={`sidebar ${menuOpen ? 'sidebar-open' : ''}`}>
-          <div className="sidebar-heading"><span>ÇALIŞMA ALANI</span><button className="icon-button close-menu" onClick={() => setMenuOpen(false)} aria-label="Menüyü kapat"><X size={17} /></button></div>
-          <button className={`nav-item ${activeTool === 'map' ? 'selected' : ''}`} onClick={() => setActiveTool('map')}><MapIcon size={17} /><span>Harita görünümü</span><span className="nav-indicator" /></button>
-          <button className={`nav-item ${activeTool === 'layers' ? 'selected' : ''}`} onClick={() => setActiveTool('layers')}><Layers3 size={17} /><span>Harita katmanları</span></button>
-          <button className={`nav-item ${activeTool === 'settings' ? 'selected' : ''}`} onClick={() => setActiveTool('settings')}><Settings2 size={17} /><span>Laboratuvar ayarları</span></button>
-          <div className="sidebar-separator" /><div className="sidebar-section-title">VERİ KATMANLARI <SlidersHorizontal size={13} /></div>
-          <div className="layer-list">
-            <button className="layer-row" onClick={() => toggleLayer('reports')}><span className="layer-symbol report-symbol"><MapPinned size={15} /></span><span className="layer-copy"><strong>Bildirimler</strong><small>Harita pinleri</small></span><span className={`switch ${layers.reports ? 'on' : ''}`} /></button>
-            <button className="layer-row" onClick={() => toggleLayer('cameras')}><span className="layer-symbol camera-symbol"><Camera size={15} /></span><span className="layer-copy"><strong>İBB trafik kameraları</strong><small>{cameraLoading ? 'Kameralar yükleniyor…' : cameraError ? 'Servis bağlantısı hatalı' : cameraCount ? `${cameraCount} canlı yayın kaydı` : 'Canlı video yayınları'}</small></span><span className={`switch ${layers.cameras ? 'on' : ''}`} /></button>
-          </div>
-          {cameraError && <div className="camera-error">{cameraError}</div>}
-          <div className="sidebar-note"><div className="note-icon"><ShieldCheck size={16} /></div><div><strong>Güvenli geliştirme</strong><p>Bu alan üretim AYTAR sisteminden bağımsızdır.</p></div></div>
-          <div className="sidebar-footer"><span className="footer-led" /> LAB ORTAMI <span className="version">v0.2.0</span></div>
-        </aside>
-        <section className="map-stage">
-          <MapCanvas onReady={handleMapReady} /><div className="map-vignette" /><LiveLayer map={mapReady ? mapRef.current : null} />
-          <div className="map-toolbar">
-            <button className="toolbar-button" onClick={resetView}><MapPinned size={16} /><span>İstanbul</span><ChevronDown size={14} /></button>
-          </div>
-          <div className="map-tools-right">
-            <button className="map-control" onClick={() => zoom(1)} aria-label="Yakınlaştır"><Plus size={18} /></button>
-            <button className="map-control" onClick={() => zoom(-1)} aria-label="Uzaklaştır"><Minus size={18} /></button>
-            <div className="control-divider" />
-            <button className="map-control locate-control" onClick={locate} aria-label="Konumuma git"><Crosshair size={18} /></button>
-          </div><div className="map-bottom-left"><span className="map-live-dot" /> HARİTA VERİSİ <span className="bottom-divider">•</span> CARTO</div><div className="map-status"><Signal size={13} /><span>{layers.cameras ? cameraLoading ? 'İBB kameralarına bağlanılıyor' : cameraError ? 'Kamera servisi kontrol edilmeli' : `${cameraCount} kamera kaydı · görünüm filtresi aktif` : mapReady ? 'Harita servisi çalışıyor' : 'Harita servisine bağlanılıyor'}</span></div><div className="map-crosshair"><span /><i /></div>
-        </section>
-        
-      </section>
-      
+      <MapCanvas onReady={handleMapReady} />
+      <div className="map-vignette" />
+      <LiveLayer map={mapReady ? mapRef.current : null} />
+      <div className="map-search">
+        <Search size={17} />
+        <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Konum veya adres ara…" />
+      </div>
+      <div className="map-zoom">
+        <button className="map-control" onClick={() => zoom(1)} aria-label="Yakınlaştır"><Plus size={19} /></button>
+        <button className="map-control" onClick={() => zoom(-1)} aria-label="Uzaklaştır"><Minus size={19} /></button>
+        <button className="map-control" onClick={locate} aria-label="Konumuma git"><Crosshair size={18} /></button>
+      </div>
+      <div className="map-top-right">
+        <button className="map-control round-control" title="Ayarlar" aria-label="Ayarlar"><Settings2 size={17} /></button>
+        <button className="map-control round-control profile-control" title="Profil" aria-label="Profil"><UserRound size={17} /></button>
+      </div>
     </main>
   )
 }
