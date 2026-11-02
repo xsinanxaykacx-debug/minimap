@@ -98,6 +98,18 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const action = body?.action;
 
+    if (action === "start" || action === "heartbeat") {
+      const { data: profile, error: profileError } = await admin
+        .from("profiles")
+        .select("status")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profileError) return json({ error: "Could not verify membership" }, 500);
+      if (!profile || profile.status !== "active") {
+        return json({ error: "Active membership required" }, 403);
+      }
+    }
+
     if (action === "start") {
       const { lat, lng, pin_id, room_id = null } = body;
       if (typeof lat !== "number" || !Number.isFinite(lat) || lat < -90 || lat > 90 ||
