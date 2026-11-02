@@ -208,7 +208,7 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <div className="brand-lockup"><div className="brand-mark"><Activity size={21} strokeWidth={2.4} /></div><div><div className="brand-name">AYTAR <span>LAB</span></div><div className="brand-subtitle">DAİMA İLERİ</div></div></div>
-        <div className="topbar-center"><span className="environment-dot" /> GELİŞTİRME ORTAMI <span className="topbar-divider">/</span> İSTANBUL</div>
+        <div className="header-search"><Search size={16} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Konum veya adres ara…" /></div>
         <div className="topbar-actions"><div className="connection"><span className="pulse-dot" /> <span>{mapReady ? 'HARİTA AKTİF' : 'BAĞLANIYOR'}</span></div><button className="icon-button mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menüyü aç"><Menu size={19} /></button><button className="profile-button" title="Laboratuvar profili">SA</button></div>
       </header>
       <section className="workspace">
@@ -235,7 +235,6 @@ function App() {
               <div className="control-divider" />
               <button className="map-control locate-control" onClick={locate} aria-label="Konumuma git"><Crosshair size={18} /></button>
             </div>
-            <div className="search-box"><Search size={16} /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Konum veya adres ara…" /><kbd>ENTER</kbd></div>
             <button className="toolbar-button" onClick={resetView}><MapPinned size={16} /><span>İstanbul</span><ChevronDown size={14} /></button>
           </div><div className="map-bottom-left"><span className="map-live-dot" /> HARİTA VERİSİ <span className="bottom-divider">•</span> CARTO</div><div className="map-status"><Signal size={13} /><span>{layers.cameras ? cameraLoading ? 'İBB kameralarına bağlanılıyor' : cameraError ? 'Kamera servisi kontrol edilmeli' : `${cameraCount} kamera kaydı · görünüm filtresi aktif` : mapReady ? 'Harita servisi çalışıyor' : 'Harita servisine bağlanılıyor'}</span></div><div className="map-crosshair"><span /><i /></div>
         </section>
