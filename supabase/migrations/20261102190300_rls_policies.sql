@@ -1,4 +1,4 @@
--- ROLLBACK SQL (manual; do not run as part of deployment rollback):
+-- ROLLBACK SQL (manual; do not run automatically):
 -- DROP POLICY IF EXISTS profiles_select_own ON public.profiles;
 -- DROP POLICY IF EXISTS live_sessions_select_own ON public.live_sessions;
 -- DROP POLICY IF EXISTS live_sessions_insert_own_active_member ON public.live_sessions;
@@ -7,9 +7,9 @@
 -- REVOKE ALL ON FUNCTION public.allocate_live_session_slot() FROM PUBLIC, anon, authenticated;
 -- DROP FUNCTION IF EXISTS public.allocate_live_session_slot();
 --
--- RLS limits row ownership and membership. The trigger serializes allocation;
--- the partial unique index in the preceding migration is the final race-safe
--- invariant for active slots 1..10.
+-- Only service_role (through the authenticated Edge Function) can INSERT/UPDATE.
+-- The trigger is a mandatory DB allocator. slot_no is NOT NULL, so NULL-slot
+-- active sessions cannot bypass the partial unique index.
 
 DO $$
 BEGIN
@@ -23,14 +23,18 @@ BEGIN
       USING (id = (SELECT auth.uid()));
   END IF;
 
-  IF NOT EXISTS (
+  IF EXISTS (
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'public' AND tablename = 'live_sessions'
       AND policyname = 'live_sessions_select_own'
   ) THEN
+    ALTER POLICY live_sessions_select_own
+      ON public.live_sessions
+      USING ((SELECT public.is_active_member()));
+  ELSE
     CREATE POLICY live_sessions_select_own
       ON public.live_sessions FOR SELECT TO authenticated
-      USING (user_id = (SELECT auth.uid()));
+      USING ((SELECT public.is_active_member()));
   END IF;
 
   IF NOT EXISTS (
@@ -75,18 +79,8 @@ DECLARE
   chosen_slot smallint;
 BEGIN
   IF TG_OP = 'INSERT' THEN
-    -- All competing starts take the same transaction-scoped lock. A second
-    -- transaction waits, then sees the first transaction's committed slot.
+    -- Serialize all concurrent starts. The trigger overwrites any supplied slot.
     PERFORM pg_catalog.pg_advisory_xact_lock(74102110);
-
-    -- Reclaim abandoned sessions after the 90-second heartbeat grace period.
-    -- Their slot is released by setting ended_at; this UPDATE re-enters this
-    -- trigger, where the UPDATE branch below handles it without re-locking.
-    UPDATE public.live_sessions AS s
-       SET ended_at = pg_catalog.now(),
-           slot_no = NULL
-     WHERE s.ended_at IS NULL
-       AND s.last_seen_at < pg_catalog.now() - interval '90 seconds';
 
     SELECT candidate.slot_no
       INTO chosen_slot
@@ -112,10 +106,9 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  -- The client cannot move a session to another slot, change its owner,
-  -- or resurrect an ended session.
-  IF NEW.user_id IS DISTINCT FROM OLD.user_id THEN
-    RAISE EXCEPTION 'Session owner cannot be changed'
+  IF NEW.user_id IS DISTINCT FROM OLD.user_id
+     OR NEW.pin_id IS DISTINCT FROM OLD.pin_id THEN
+    RAISE EXCEPTION 'Session owner and pin cannot be changed'
       USING ERRCODE = '42501';
   END IF;
 
@@ -124,11 +117,13 @@ BEGIN
       USING ERRCODE = 'P0001';
   END IF;
 
+  -- Never NULL the slot: NOT NULL is invariant for every row.
+  -- Ended rows are excluded from the partial unique index and free the slot.
+  NEW.slot_no := OLD.slot_no;
+
   IF NEW.ended_at IS NOT NULL THEN
-    NEW.slot_no := NULL;
     NEW.ended_at := COALESCE(NEW.ended_at, pg_catalog.now());
   ELSE
-    NEW.slot_no := OLD.slot_no;
     NEW.last_seen_at := pg_catalog.now();
   END IF;
 
