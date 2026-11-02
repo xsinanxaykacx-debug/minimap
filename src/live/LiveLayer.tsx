@@ -119,6 +119,7 @@ export function useViewer(
         pc.addTransceiver('audio', { direction: 'recvonly' })
         pc.ontrack = event => {
           const stream = event.streams[0] ?? new MediaStream([event.track])
+          event.track.onended = () => setStatus('Yayın sona erdi')
           setRemoteStream(stream)
           setStatus('CANLI YAYIN')
         }
