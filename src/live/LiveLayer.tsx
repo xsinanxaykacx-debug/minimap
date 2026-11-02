@@ -202,6 +202,7 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
   const markersRef = useRef<Marker[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
   const publisherVideoRef = useRef<HTMLVideoElement>(null)
+  const desktopPublisherVideoRef = useRef<HTMLVideoElement>(null)
   const publisher = useBroadcast(supabase, publisherSession?.room_id ?? null, clientId, publisherStream)
   const localPreviewStream = publisher.localStream ?? grantedStream
   const viewer = useViewer(supabase, viewerSession?.room_id ?? null, clientId)
@@ -278,9 +279,10 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
 
   useEffect(() => {
     const video = publisherVideoRef.current
-    if (!video) return
-    video.srcObject = localPreviewStream
-    if (localPreviewStream) void video.play().catch(() => undefined)
+    const desktopVideo = desktopPublisherVideoRef.current
+    if (!video && !desktopVideo) return
+    if (video) { video.srcObject = localPreviewStream; if (localPreviewStream) void video.play().catch(() => undefined) }
+    if (desktopVideo) { desktopVideo.srcObject = localPreviewStream; if (localPreviewStream) void desktopVideo.play().catch(() => undefined) }
   }, [localPreviewStream, publisherSession])
 
   useEffect(() => {
@@ -418,38 +420,76 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
   if (!supabase) return <div className="live-layer-card live-layer-warning">LAB Supabase Preview anahtarları tanımlı değil.</div>
 
   return (
-    <div ref={panelRef} className={`live-layer-ui${sheetCollapsed ? ' mobile-sheet-collapsed' : ''}`}>
-      <div className="live-layer-drag-handle" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} role="button" tabIndex={0} aria-label="Yayın panelini taşı veya daralt">
-        <span className="live-layer-drag-grip" />
-        <strong>CANLI YAYIN BAŞLAT</strong>
-        <button className="live-panel-close" onClick={onClose} aria-label="Paneli kapat"><X size={16} /></button>
-      </div>
-      {!authSession ? (
-        <div className="live-layer-card">
-          <strong>Canlı yayın</strong>
-          <input value={email} onChange={event => setEmail(event.target.value)} placeholder="E-posta" type="email" />
-          <input value={password} onChange={event => setPassword(event.target.value)} placeholder="Şifre" type="password" />
-          <div className="live-layer-actions">
-            <button disabled={busy} onClick={() => { void authenticate('signin') }}>Giriş yap</button>
-            <button className="secondary" disabled={busy} onClick={() => { void authenticate('signup') }}>Kayıt ol</button>
-          </div>
-          {notice && <small>{notice}</small>}
+    <>
+      <div className="mobile-live-panel fixed bottom-0 left-0 w-full bg-[#0B192C] border-t border-[#1E293B] rounded-t-2xl z-50 flex flex-col h-[60vh] md:hidden">
+        <div className="flex justify-between items-center p-4 border-b border-[#1E293B]">
+          <span className="text-[#F8F9FA] font-bold text-sm">CANLI YAYIN BAŞLAT</span>
+          <button onClick={onClose} className="text-gray-400 hover:text-white" aria-label="Paneli kapat">✕</button>
         </div>
-      ) : (
-        <div className="live-layer-card">
-          <div className="live-layer-heading"><strong>AYTAR CANLI</strong><span>{profileStatus || 'Kontrol ediliyor'}</span></div>
-          {profileStatus === 'active' && localPreviewStream && (
-            <div className="live-viewer-panel live-publisher-preview">
-              <div className="live-layer-heading"><strong>{publisherSession ? 'KENDİ YAYINIM' : 'KAMERA ÖNİZLEMESİ'}</strong><span>{publisherSession ? 'YAYINCI' : 'YAYIN ÖNCESİ'}</span></div>
-              <video ref={publisherVideoRef} autoPlay muted playsInline />
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+          <div className="w-full h-48 bg-black rounded-lg overflow-hidden relative flex-shrink-0">
+            <video ref={publisherVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+          </div>
+          {!authSession && (
+            <div className="mobile-auth-fields">
+              <input value={email} onChange={event => setEmail(event.target.value)} placeholder="E-posta" type="email" />
+              <input value={password} onChange={event => setPassword(event.target.value)} placeholder="Şifre" type="password" />
+              <div className="mobile-auth-buttons">
+                <button onClick={() => void authenticate('signin')} disabled={busy || !email.trim() || !password}>Giriş yap</button>
+                <button onClick={() => void authenticate('signup')} disabled={busy || !email.trim() || !password}>Kayıt ol</button>
+              </div>
             </div>
           )}
-          {profileStatus !== 'active' ? (
-            <small>Hesap durumu: {profileStatus || 'yükleniyor'}. Yayın ve izleme için aktif üyelik gerekir.</small>
-          ) : (
-            <>
-              {!publisherSession ? (
-                <>
+          <div className="text-[#94A3B8] text-xs">
+            Konum: Yayın başlatılırken GPS üzerinden alınacak
+            {profileStatus && profileStatus !== 'active' ? ` · Üyelik: ${profileStatus}` : ''}
+            {notice ? ` · ${notice}` : ''}
+          </div>
+          <div className="mt-auto flex flex-col gap-2">
+            <button onClick={() => void grantCamera()} disabled={!authSession || profileStatus !== 'active' || cameraGranted || busy} className="w-full bg-[#1E293B] text-[#F8F9FA] py-3 rounded-lg font-semibold">
+              {cameraGranted ? 'Kamera İzni Verildi' : 'Kamera İzni Ver'}
+            </button>
+            <button onClick={() => void startBroadcast()} disabled={!authSession || profileStatus !== 'active' || !cameraGranted || busy || !!publisherSession} className="w-full bg-[#38BDF8] text-[#0B192C] py-3 rounded-lg font-semibold">
+              {busy ? 'Hazırlanıyor…' : publisherSession ? 'Yayın Aktif' : 'Yayına Başla'}
+            </button>
+            <button onClick={() => publisherSession ? void endBroadcast() : void supabase?.auth.signOut()} disabled={!authSession || busy} className="w-full bg-red-500/10 text-red-500 py-3 rounded-lg font-semibold border border-red-500/20">
+              Oturumu Kapat
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div ref={panelRef} className={`live-layer-desktop live-layer-ui${sheetCollapsed ? ' mobile-sheet-collapsed' : ''}`}>
+        <div className="live-layer-drag-handle" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} role="button" tabIndex={0} aria-label="Yayın panelini taşı veya daralt">
+          <span className="live-layer-drag-grip" />
+          <strong>CANLI YAYIN BAŞLAT</strong>
+          <button className="live-panel-close" onClick={onClose} aria-label="Paneli kapat"><X size={16} /></button>
+        </div>
+        {!authSession ? (
+          <div className="live-layer-card">
+            <strong>Canlı yayın</strong>
+            <input value={email} onChange={event => setEmail(event.target.value)} placeholder="E-posta" type="email" />
+            <input value={password} onChange={event => setPassword(event.target.value)} placeholder="Şifre" type="password" />
+            <div className="live-layer-actions">
+              <button disabled={busy} onClick={() => { void authenticate('signin') }}>Giriş yap</button>
+              <button className="secondary" disabled={busy} onClick={() => { void authenticate('signup') }}>Kayıt ol</button>
+            </div>
+            {notice && <small>{notice}</small>}
+          </div>
+        ) : (
+          <div className="live-layer-card">
+            <div className="live-layer-heading"><strong>AYTAR CANLI</strong><span>{profileStatus || 'Kontrol ediliyor'}</span></div>
+            {profileStatus === 'active' && localPreviewStream && (
+              <div className="live-viewer-panel live-publisher-preview">
+                <div className="live-layer-heading"><strong>{publisherSession ? 'KENDİ YAYINIM' : 'KAMERA ÖNİZLEMESİ'}</strong><span>{publisherSession ? 'YAYINCI' : 'YAYIN ÖNCESİ'}</span></div>
+                <video ref={desktopPublisherVideoRef} autoPlay muted playsInline />
+              </div>
+            )}
+            {profileStatus !== 'active' ? (
+              <small>Hesap durumu: {profileStatus || 'yükleniyor'}. Yayın ve izleme için aktif üyelik gerekir.</small>
+            ) : (
+              <>
+                {!publisherSession ? (
                   <div className="live-layer-mobile-actions">
                     <small>Konum: Yayın başlatılırken GPS üzerinden alınacak</small>
                     <button className="secondary" disabled={cameraGranted || busy} onClick={() => void grantCamera()}>
@@ -459,29 +499,27 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
                       {busy ? 'Hazırlanıyor…' : 'Yayına Başla'}
                     </button>
                   </div>
-                </>
-              ) : (
-                <>
+                ) : (
                   <div className="live-layer-mobile-actions">
                     <small>{publisher.status}</small>
                     <button className="danger" disabled={busy} onClick={() => void endBroadcast()}>Yayını Bitir</button>
                   </div>
-                </>
-              )}
-              {viewerSession && (
-                <div className="live-viewer-panel">
-                  <div className="live-layer-heading"><strong>CANLI YAYIN</strong><button className="secondary" onClick={closeViewer}>Kapat</button></div>
-                  <video ref={videoRef} autoPlay muted playsInline controls />
-                  <small>{viewer.status}</small>
-                </div>
-              )}
-            </>
-          )}
-          <button className="secondary" onClick={() => void supabase.auth.signOut()}>Oturumu kapat</button>
-          {notice && <small>{notice}</small>}
-        </div>
-      )}
-    </div>
+                )}
+                {viewerSession && (
+                  <div className="live-viewer-panel">
+                    <div className="live-layer-heading"><strong>CANLI YAYIN</strong><button className="secondary" onClick={closeViewer}>Kapat</button></div>
+                    <video ref={videoRef} autoPlay muted playsInline controls />
+                    <small>{viewer.status}</small>
+                  </div>
+                )}
+              </>
+            )}
+            <button className="secondary" onClick={() => void supabase.auth.signOut()}>Oturumu kapat</button>
+            {notice && <small>{notice}</small>}
+          </div>
+        )}
+      </div>
+    </>
   )
 }
 
