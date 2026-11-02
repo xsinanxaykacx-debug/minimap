@@ -191,6 +191,9 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
   const [viewerSession, setViewerSession] = useState<LiveSession | null>(null)
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [sheetCollapsed, setSheetCollapsed] = useState(false)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const dragRef = useRef<{x:number;y:number;left:number;top:number;mobile:boolean;moved:boolean}|null>(null)
   const markersRef = useRef<Marker[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
   const publisherVideoRef = useRef<HTMLVideoElement>(null)
@@ -353,10 +356,50 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
     setNotice('İzleyici bağlantısı kapatıldı')
   }
 
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const panel = panelRef.current
+    if (!panel) return
+    const mobile = window.matchMedia('(max-width: 767px)').matches
+    const rect = panel.getBoundingClientRect()
+    dragRef.current = { x:event.clientX, y:event.clientY, left:rect.left, top:rect.top, mobile, moved:false }
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current
+    const panel = panelRef.current
+    if (!drag || !panel) return
+    const dx = event.clientX - drag.x
+    const dy = event.clientY - drag.y
+    if (Math.abs(dx) + Math.abs(dy) > 5) drag.moved = true
+    if (drag.mobile) return
+    const maxLeft = Math.max(0, window.innerWidth - panel.offsetWidth)
+    const maxTop = Math.max(0, window.innerHeight - panel.offsetHeight)
+    panel.style.left = `${Math.min(maxLeft, Math.max(0, drag.left + dx))}px`
+    panel.style.top = `${Math.min(maxTop, Math.max(0, drag.top + dy))}px`
+    panel.style.right = 'auto'
+    panel.style.bottom = 'auto'
+  }
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current
+    if (!drag) return
+    if (drag.mobile) {
+      const dy = event.clientY - drag.y
+      if (dy > 45) setSheetCollapsed(true)
+      else if (dy < -25) setSheetCollapsed(false)
+      else if (!drag.moved) setSheetCollapsed(value => !value)
+    }
+    dragRef.current = null
+  }
+
   if (!supabase) return <div className="live-layer-card live-layer-warning">LAB Supabase Preview anahtarları tanımlı değil.</div>
 
   return (
-    <div className="live-layer-ui">
+    <div ref={panelRef} className={`live-layer-ui${sheetCollapsed ? ' mobile-sheet-collapsed' : ''}`}>
+      <div className="live-layer-drag-handle" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} role="button" tabIndex={0} aria-label="Yayın panelini taşı veya daralt">
+        <span className="live-layer-drag-grip" />
+        <strong>YAYIN PANELİ</strong>
+        <span className="live-layer-drag-hint">{sheetCollapsed ? 'AÇ' : 'KAPAT'}</span>
+      </div>
       {!authSession ? (
         <div className="live-layer-card">
           <strong>Canlı yayın</strong>
