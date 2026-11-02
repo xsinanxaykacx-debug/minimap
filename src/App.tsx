@@ -71,9 +71,6 @@ function App() {
   const [search, setSearch] = useState('')
   const [livePanelOpen, setLivePanelOpen] = useState(false)
   const [mapReady, setMapReady] = useState(false)
-  const [cameraCount, setCameraCount] = useState(0)
-  const [cameraLoading, setCameraLoading] = useState(false)
-  const [cameraError, setCameraError] = useState('')
 
   const handleMapReady = useCallback((map: MapLibreMap) => {
     mapRef.current = map
@@ -152,8 +149,6 @@ function App() {
     }
     const onMoveEnd = () => renderVisibleMarkers()
     map.on('moveend', onMoveEnd)
-    setCameraLoading(true)
-    setCameraError('')
     fetch(cameraEndpoint, { headers: { Accept: 'application/json' } })
       .then(response => {
         if (!response.ok) throw new Error(`Kamera servisi HTTP ${response.status}`)
@@ -163,17 +158,11 @@ function App() {
         if (cancelled) return
         loadedCameras = normalizeCameras(payload)
         if (!loadedCameras.length) throw new Error('Servis yanıtında koordinat ve yayın adresi bulunan kamera kaydı bulunamadı.')
-        setCameraCount(loadedCameras.length)
         renderVisibleMarkers()
         
-        setCameraError('')
-        setCameraLoading(false)
       })
       .catch(error => {
         if (cancelled) return
-        setCameraError(error instanceof Error ? error.message : 'Kamera verisi alınamadı')
-        
-        setCameraLoading(false)
       })
     return () => {
       cancelled = true
@@ -193,7 +182,6 @@ function App() {
       { enableHighAccuracy: true, timeout: 10000 },
     )
   }
-  const resetView = () => mapRef.current?.flyTo({ center: [28.9784, 41.0082], zoom: 11.3, pitch: 48, bearing: -12, duration: 900 })
 
   return (
     <main className="app-shell">
