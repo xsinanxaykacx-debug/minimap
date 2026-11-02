@@ -93,3 +93,28 @@ button{color:inherit}
  .mobile-sheet-collapsed .live-layer-card{display:none}
  .mobile-sheet-collapsed.live-layer-ui{height:58px;max-height:58px}
 }
+
+/* Mobile live panel: explicit utility equivalents (Tailwind is not installed in this app). */
+.mobile-live-panel{display:none}
+@media(max-width:767px){
+ .live-layer-desktop{display:none!important}
+ .mobile-live-panel{display:flex!important;position:fixed!important;right:auto!important;top:auto!important;bottom:0!important;left:0!important;width:100%!important;height:60vh!important;max-height:60vh!important;min-width:0!important;box-sizing:border-box!important;overflow:hidden!important;z-index:50!important;flex-direction:column!important;background:#0B192C!important;border-top:1px solid #1E293B!important;border-radius:16px 16px 0 0!important;filter:none!important}
+ .mobile-live-panel>.flex.justify-between{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #1E293B;flex:none;min-width:0}
+ .mobile-live-panel .text-\\[\\#F8F9FA\\].font-bold{color:#F8F9FA;font-weight:700;font-size:14px}
+ .mobile-live-panel .text-gray-400{color:#9CA3AF;background:transparent;border:0;padding:4px 8px;cursor:pointer}
+ .mobile-live-panel .hover\\:text-white:hover{color:#fff}
+ .mobile-live-panel>.flex-1{display:flex;flex:1 1 0%;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;padding:16px;flex-direction:column;gap:16px}
+ .mobile-live-panel .w-full.h-48{display:block;position:relative;flex:0 0 192px;width:100%;height:192px;min-height:192px;overflow:hidden;border-radius:8px;background:#000}
+ .mobile-live-panel video{display:block;width:100%;height:100%;object-fit:cover}
+ .mobile-live-panel .text-\\[\\#94A3B8\\].text-xs{color:#94A3B8;font-size:12px;line-height:1.5}
+ .mobile-live-panel .mt-auto{display:flex;flex-direction:column;gap:8px;margin-top:auto}
+ .mobile-live-panel .mt-auto button{display:block;width:100%;min-height:48px;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+ .mobile-live-panel .bg-\\[\\#1E293B\\]{background:#1E293B;color:#F8F9FA;border:1px solid #334155}
+ .mobile-live-panel .bg-\\[\\#38BDF8\\]{background:#38BDF8;color:#0B192C;border:1px solid #38BDF8}
+ .mobile-live-panel .bg-red-500\\/10{background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2)}
+ .mobile-live-panel button:disabled{opacity:.45;cursor:not-allowed}
+ .mobile-auth-fields{display:flex;flex-direction:column;gap:8px}
+ .mobile-auth-fields input{width:100%;height:42px;padding:8px 12px;border:1px solid #334155;border-radius:8px;background:#1E293B;color:#F8F9FA}
+ .mobile-auth-buttons{display:flex;gap:8px}
+ .mobile-auth-buttons button{flex:1;min-height:42px;border:1px solid #334155;border-radius:8px;background:#1E293B;color:#F8F9FA}
+}
