@@ -69,7 +69,7 @@ $$;
 
 REVOKE ALL ON FUNCTION public.cleanup_stale_live_sessions() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.cleanup_stale_live_sessions() FROM anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.cleanup_stale_live_sessions() TO postgres;
+GRANT EXECUTE ON FUNCTION public.cleanup_stale_live_sessions() TO postgres, service_role;
 
 -- Supabase Cron is pg_cron. This creates/updates a named job; the function
 -- uses last_seen_at (heartbeat), not started_at, so healthy long broadcasts live.
