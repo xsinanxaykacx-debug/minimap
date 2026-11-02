@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import maplibregl, { type Map as MapLibreMap } from 'maplibre-gl'
 import {
   Activity, AlertTriangle, Camera, ChevronDown, Crosshair, Layers3,
@@ -53,10 +53,10 @@ function App() {
   const [activeTool, setActiveTool] = useState('layers')
   const [notice, setNotice] = useState('Laboratuvar haritası hazır')
 
-  const handleMapReady = (map: MapLibreMap) => {
+  const handleMapReady = useCallback((map: MapLibreMap) => {
     mapRef.current = map
     setMapReady(true)
-  }
+  }, [])
 
   const toggleLayer = (key: LayerKey) => {
     setLayers(current => ({ ...current, [key]: !current[key] }))
