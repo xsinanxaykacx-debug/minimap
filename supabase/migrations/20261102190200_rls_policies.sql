@@ -133,9 +133,13 @@ BEGIN
 
   RETURN NEW;
 END;
-$$;
+$;
 
-DO $$
+REVOKE ALL ON FUNCTION public.enforce_live_session_limit() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.enforce_live_session_limit() FROM anon;
+REVOKE ALL ON FUNCTION public.enforce_live_session_limit() FROM authenticated;
+
+DO $
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_trigger
