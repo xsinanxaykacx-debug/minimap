@@ -192,7 +192,7 @@ function App() {
         <Search size={17} />
         <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Konum veya adres ara…" />
       </div>
-      <div className="map-zoom map-right-rail">
+      <div className={"map-zoom map-right-rail" + (livePanelOpen ? " panel-open" : "")}>
         <button className="map-control" onClick={() => zoom(1)} aria-label="Yakınlaştır"><Plus size={19} /></button>
         <button className="map-control" onClick={() => zoom(-1)} aria-label="Uzaklaştır"><Minus size={19} /></button>
         <button className="map-control" onClick={locate} aria-label="Konumuma git"><Crosshair size={18} /></button>
