@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 
 type CameraRecord = { id: string; name: string; lat: number; lng: number; videoUrl: string }
-const mapStyle = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+const mapStyle = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
 const cameraEndpoint = import.meta.env.VITE_IBB_CAMERA_PROXY_URL || 'https://aytar-ibb-cameras.xsinanxaykacx.workers.dev/'
 
 function pick(record: Record<string, unknown>, keys: string[]) {
