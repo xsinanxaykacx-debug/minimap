@@ -5,3 +5,27 @@
 
 /* İBB camera markers and live-stream popup */
 .camera-marker{display:flex;align-items:center;gap:5px;padding:3px 7px 3px 4px;border:1px solid #45d9d1;border-radius:20px;background:#071720ed;color:#dffdfa;cursor:pointer;box-shadow:0 0 14px #23cfc855;white-space:nowrap;transform:translateY(-2px)}.camera-marker-dot{width:9px;height:9px;flex:none;border-radius:50%;background:#56e6dc;border:2px solid #d9fffb;box-shadow:0 0 9px #45d9d1}.camera-marker-label{font:700 9px Manrope, sans-serif;max-width:130px;overflow:hidden;text-overflow:ellipsis}.camera-marker:hover{background:#17434a;z-index:10}.camera-popup{width:310px;padding:2px;color:#e8f2fb}.camera-popup-title{font:700 12px Manrope,sans-serif;margin:2px 0 7px;color:#e5f7f5}.camera-popup-status{font:9px 'DM Mono',monospace;color:#65d9d0;margin-bottom:8px}.camera-video{display:block;width:100%;max-height:190px;background:#02070b;border:1px solid #243a4a;border-radius:6px}.maplibregl-popup-content{background:#0c1724!important;border:1px solid #2b4956;border-radius:9px!important;box-shadow:0 12px 35px #0009!important;padding:12px!important}.maplibregl-popup-tip{border-top-color:#0c1724!important;border-bottom-color:#0c1724!important}.maplibregl-popup-close-button{color:#a9c0d2!important;font-size:18px!important;padding:3px 7px!important}.camera-error{margin:12px 4px 0;padding:9px;border:1px solid #653d42;border-radius:7px;background:#281a20;color:#e9a6a6;font-size:9px;line-height:1.5}
+
+
+/* Independent AYTAR-LIVE P2P layer — does not alter IBB camera markers. */
+.live-layer-ui{position:absolute;z-index:5;left:18px;bottom:58px;width:min(330px,calc(100% - 36px));max-height:calc(100% - 125px);overflow:auto}
+.live-layer-card{display:flex;flex-direction:column;gap:9px;padding:13px;background:#091522f2;border:1px solid #75404a;border-radius:10px;box-shadow:0 12px 35px #0009;backdrop-filter:blur(12px)}
+.live-layer-card>strong,.live-layer-heading strong{font-size:11px;letter-spacing:1px;color:#f2dce0}
+.live-layer-card input{height:35px;min-width:0;padding:0 10px;border:1px solid #34475b;border-radius:6px;background:#0d1b2a;color:#e8f2fb;font-size:11px;outline:none}
+.live-layer-card input:focus{border-color:#a94e5b}
+.live-layer-card>button,.live-layer-actions button,.live-layer-heading button{min-height:34px;padding:0 11px;border:1px solid #a84956;border-radius:6px;background:#7d2937;color:#fff;font-size:10px;font-weight:700;cursor:pointer}
+.live-layer-card button:disabled{opacity:.5;cursor:not-allowed}
+.live-layer-card button.secondary,.live-layer-actions button.secondary,.live-layer-heading button.secondary{background:#172536;border-color:#35485c;color:#b9c9da}
+.live-layer-card button.danger{background:#5c202b;border-color:#a84956}
+.live-layer-actions{display:flex;gap:7px}
+.live-layer-actions button{flex:1}
+.live-layer-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.live-layer-heading span,.live-layer-heading small{font:9px 'DM Mono',monospace;color:#c58b95;text-transform:uppercase}
+.live-layer-card small{font-size:9px;line-height:1.5;color:#a9b8c9}
+.live-viewer-panel{display:flex;flex-direction:column;gap:7px;padding-top:9px;border-top:1px solid #35404f}
+.live-viewer-panel video{width:100%;max-height:210px;background:#02070b;border:1px solid #63313b;border-radius:6px}
+.live-layer-warning{color:#efb7bf;font-size:10px}
+.live-session-marker{width:42px;height:42px;border:2px solid #ffd7dc;border-radius:50%;background:#c8293d;color:white;font:800 8px 'DM Mono',monospace;box-shadow:0 0 0 0 #e52c46a8,0 0 18px #e52c46b0;cursor:pointer;animation:live-session-pulse 1.8s infinite}
+.live-session-marker:hover{transform:scale(1.1);background:#ed344d}
+@keyframes live-session-pulse{0%{box-shadow:0 0 0 0 #e52c4680,0 0 14px #e52c4680}70%{box-shadow:0 0 0 13px #e52c4600,0 0 22px #e52c46a0}100%{box-shadow:0 0 0 0 #e52c4600,0 0 14px #e52c4680}}
+@media(max-width:650px){.live-layer-ui{left:10px;bottom:56px;width:min(310px,calc(100% - 20px));max-height:55%}.live-layer-card{padding:10px}}
