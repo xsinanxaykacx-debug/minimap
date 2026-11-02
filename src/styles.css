@@ -327,3 +327,105 @@ html,body,#root,.app-shell{background:#0F2A4A;color:#F8F9FA}
  .live-layer-ui{touch-action:auto}
  .live-layer-drag-handle{touch-action:none}
 }
+
+
+/* AYTAR — NAVY / NEON GREEN / FIRE PIN PALETTE */
+:root{
+  --ay-bg:#071B33;
+  --ay-panel:#0B2340;
+  --ay-selected:#123454;
+  --ay-text:#A6FF4D;
+  --ay-muted:#A7B2C0;
+  --ay-border:#1C4264;
+  --ay-accent:#8DFF00;
+  --ay-accent-hover:#B0FF35;
+  --ay-fire-red:#FF3B30;
+  --ay-fire-orange:#FF8A00;
+}
+html,body,#root,.app-shell,.workspace,.topbar,.sidebar,
+.live-layer-ui,.live-layer-card,.live-layer-drag-handle{
+  background-color:#071B33!important;
+  color:#A6FF4D!important;
+}
+.topbar,.sidebar,.live-layer-card,.live-layer-ui,
+.search-box,.toolbar-button,.map-tools-right,.map-control,
+.map-bottom-left,.map-status,.map-notice{
+  background:#0B2340!important;
+  border-color:#1C4264!important;
+}
+.topbar,.sidebar,.live-layer-card,.live-layer-ui,
+.search-box,.toolbar-button,.map-control,.map-status,.map-notice{
+  color:#A6FF4D!important;
+}
+.brand-name,.brand-name span,.brand-subtitle,.topbar-center,
+.connection,.sidebar-heading,.sidebar-section-title,
+.sidebar-footer,.layer-copy strong,.nav-item,
+.live-layer-card strong,.live-layer-card label,
+.live-layer-heading strong,.map-notice{
+  color:#A6FF4D!important;
+}
+.brand-subtitle,.connection,.layer-copy small,.sidebar-note p,
+.live-layer-card small,.live-layer-heading span,
+.live-layer-heading small,.map-status,.map-bottom-left{
+  color:#A7B2C0!important;
+}
+.brand-mark,.profile-button,.icon-button,.nav-item.selected,
+.nav-item:hover,.layer-row:hover,.sidebar-note,
+.layer-symbol,.report-symbol,.camera-symbol,
+.live-layer-card button.secondary,.live-layer-actions button.secondary,
+.live-layer-heading button.secondary{
+  background:#123454!important;
+  border-color:#1C4264!important;
+  color:#A6FF4D!important;
+}
+.nav-item.selected{box-shadow:inset 3px 0 #8DFF00!important}
+.nav-item.selected svg,.nav-indicator,.note-icon,
+.search-box svg,.toolbar-button svg,.map-status svg,
+.locate-control,.live-layer-drag-grip,.live-layer-drag-hint{
+  color:#8DFF00!important;
+}
+.environment-dot,.pulse-dot,.footer-led,.statusbar-dot,.map-live-dot,
+.switch.on{background:#8DFF00!important;box-shadow:0 0 9px #8DFF0080!important}
+.switch.on:after{background:#071B33!important}
+.sidebar-separator,.control-divider,.layer-row{border-color:#1C4264!important}
+.search-box input,.search-box input::placeholder,
+.search-box kbd,.live-layer-card input{
+  color:#A7B2C0!important;
+  background:#071B33!important;
+  border-color:#1C4264!important;
+}
+.live-layer-card>button,.live-layer-actions button,
+.live-layer-heading button{
+  background:#8DFF00!important;
+  border:1px solid #8DFF00!important;
+  color:#071B33!important;
+}
+.live-layer-card>button:hover,.live-layer-actions button:hover,
+.live-layer-heading button:hover{background:#B0FF35!important}
+.live-layer-card button.danger,.live-layer-actions button.danger{
+  background:#FF3B30!important;border-color:#FF3B30!important;color:#FFFFFF!important;
+}
+.live-viewer-panel video{background:#071B33!important;border-color:#1C4264!important}
+.maplibregl-popup-content{background:#0B2340!important;border-color:#1C4264!important;color:#A6FF4D!important}
+.maplibregl-popup-tip{border-top-color:#0B2340!important;border-bottom-color:#0B2340!important}
+.maplibregl-popup-close-button{color:#A6FF4D!important}
+.maplibregl-ctrl-attrib{background:#0B2340!important;color:#A7B2C0!important}
+.maplibregl-ctrl-attrib a{color:#8DFF00!important}
+
+/* Live users: fire red to orange */
+.live-session-marker{
+  background:linear-gradient(135deg,#FF3B30 0%,#FF8A00 100%)!important;
+  border:2px solid #FFD166!important;
+  color:#FFFFFF!important;
+  box-shadow:0 0 12px #FF3B30AA,0 0 24px #FF8A0070!important;
+  animation:live-session-pulse 1.8s infinite!important;
+}
+@keyframes live-session-pulse{
+  0%{box-shadow:0 0 0 0 #FF3B30AA,0 0 14px #FF8A0080}
+  70%{box-shadow:0 0 0 13px #FF3B3000,0 0 24px #FF8A00AA}
+  100%{box-shadow:0 0 0 0 #FF3B3000,0 0 14px #FF8A0080}
+}
+.camera-marker{background:#0B2340!important;border-color:#8DFF00!important;color:#A6FF4D!important}
+.camera-marker-dot{background:#8DFF00!important;border-color:#FFFFFF!important;box-shadow:0 0 8px #8DFF00!important}
+.camera-marker:hover{background:#123454!important}
+.camera-error{background:#123454!important;border-color:#FF3B30!important;color:#A7B2C0!important}
