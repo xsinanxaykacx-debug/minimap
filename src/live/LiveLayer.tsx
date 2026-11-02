@@ -181,6 +181,7 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
     return url && key ? createClient(url, key) : null
   }, [])
   const [authSession, setAuthSession] = useState<Session | null>(null)
+  const clientId = useMemo(() => crypto.randomUUID(), [])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [profileStatus, setProfileStatus] = useState('')
@@ -192,8 +193,8 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
   const [busy, setBusy] = useState(false)
   const markersRef = useRef<Marker[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
-  const publisher = useBroadcast(supabase, publisherSession?.room_id ?? null, authSession?.user.id ?? null, publisherStream)
-  const viewer = useViewer(supabase, viewerSession?.room_id ?? null, authSession?.user.id ?? null)
+  const publisher = useBroadcast(supabase, publisherSession?.room_id ?? null, clientId, publisherStream)
+  const viewer = useViewer(supabase, viewerSession?.room_id ?? null, clientId)
 
   useEffect(() => {
     if (!supabase) return
@@ -378,7 +379,7 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
               {viewerSession && (
                 <div className="live-viewer-panel">
                   <div className="live-layer-heading"><strong>CANLI YAYIN</strong><button className="secondary" onClick={closeViewer}>Kapat</button></div>
-                  <video ref={videoRef} autoPlay playsInline controls />
+                  <video ref={videoRef} autoPlay muted playsInline controls />
                   <small>{viewer.status}</small>
                 </div>
               )}
