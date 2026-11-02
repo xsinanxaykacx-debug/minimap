@@ -47,7 +47,7 @@ button{color:inherit}
 .live-viewer-panel video{display:block;width:100%;max-height:210px;min-height:150px;object-fit:cover;border:1px solid #334155;border-radius:6px;background:#02070b}
 .live-layer-warning{color:#F8F9FA}
 .mobile-sheet-collapsed .live-layer-card{display:none}
-.live-session-marker{width:42px;height:42px;border:2px solid #F8F9FA;border-radius:50%;background:#0B192C;color:#F8F9FA;font:800 8px 'DM Mono',monospace;box-shadow:0 0 0 0 #38BDF888,0 0 16px #38BDF855;cursor:pointer;animation:live-session-pulse 1.8s infinite}
+.live-session-marker{width:42px;height:42px;border:2px solid #F8F9FA;border-radius:50%;background:#FF5722;color:#FFFFFF;font:800 8px 'DM Mono',monospace;box-shadow:0 0 0 0 #FF572288,0 0 16px #FF572255;cursor:pointer;animation:live-session-pulse 1.8s infinite}
 @keyframes live-session-pulse{0%{box-shadow:0 0 0 0 #38BDF888,0 0 14px #38BDF855}70%{box-shadow:0 0 0 13px #38BDF800,0 0 20px #38BDF855}100%{box-shadow:0 0 0 0 #38BDF800,0 0 14px #38BDF855}}
 .camera-marker{display:flex;align-items:center;gap:5px;padding:3px 7px 3px 4px;border:1px solid #334155;border-radius:20px;background:#0B192C;color:#F8F9FA;cursor:pointer;white-space:nowrap;transform:translateY(-2px)}
 .camera-marker-dot{width:9px;height:9px;flex:none;border:2px solid #F8F9FA;border-radius:50%;background:#94A3B8}
