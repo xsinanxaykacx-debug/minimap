@@ -4,7 +4,7 @@ import Hls from 'hls.js'
 import LiveLayer from './live/LiveLayer'
 import {
   Activity, Camera, ChevronDown, Crosshair, Layers3, Map as MapIcon,
-  MapPinned, Menu, Minus, Plus, Radio, Search, Settings2, ShieldCheck,
+  MapPinned, Menu, Minus, Plus, Search, Settings2, ShieldCheck,
   Signal, SlidersHorizontal, X ,
 } from 'lucide-react'
 
@@ -232,7 +232,7 @@ function App() {
           <MapCanvas onReady={handleMapReady} /><div className="map-vignette" /><LiveLayer map={mapReady ? mapRef.current : null} />
           <div className="map-toolbar"><div className="search-box"><Search size={16} /><input value={search} onChange={event => setSearch(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && search.trim()) setNotice(`Arama altyapısı sırada: ${search.trim()}`) }} placeholder="Konum veya adres ara…" /><kbd>ENTER</kbd></div><button className="toolbar-button" onClick={resetView}><MapPinned size={16} /><span>İstanbul</span><ChevronDown size={14} /></button></div>
           <div className="map-tools-right"><button className="map-control" onClick={() => zoom(1)} aria-label="Yakınlaştır"><Plus size={18} /></button><button className="map-control" onClick={() => zoom(-1)} aria-label="Uzaklaştır"><Minus size={18} /></button><div className="control-divider" /><button className="map-control locate-control" onClick={locate} aria-label="Konumuma git"><Crosshair size={18} /></button></div>
-          <div className="map-bottom-left"><span className="map-live-dot" /> HARİTA VERİSİ <span className="bottom-divider">•</span> CARTO</div><div className="map-status"><Signal size={13} /><span>{layers.cameras ? cameraLoading ? 'İBB kameralarına bağlanılıyor' : cameraError ? 'Kamera servisi kontrol edilmeli' : `${cameraCount} kamera kaydı · görünüm filtresi aktif` : mapReady ? 'Harita servisi çalışıyor' : 'Harita servisine bağlanılıyor'}</span></div><div className="map-crosshair"><span /><i /></div>
+          <div className="map-notice" aria-live="polite">{notice}</div><div className="map-bottom-left"><span className="map-live-dot" /> HARİTA VERİSİ <span className="bottom-divider">•</span> CARTO</div><div className="map-status"><Signal size={13} /><span>{layers.cameras ? cameraLoading ? 'İBB kameralarına bağlanılıyor' : cameraError ? 'Kamera servisi kontrol edilmeli' : `${cameraCount} kamera kaydı · görünüm filtresi aktif` : mapReady ? 'Harita servisi çalışıyor' : 'Harita servisine bağlanılıyor'}</span></div><div className="map-crosshair"><span /><i /></div>
         </section>
         
       </section>
