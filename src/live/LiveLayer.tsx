@@ -374,10 +374,13 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
     if (drag.mobile) return
     const maxLeft = Math.max(0, window.innerWidth - panel.offsetWidth)
     const maxTop = Math.max(0, window.innerHeight - panel.offsetHeight)
-    panel.style.left = `${Math.min(maxLeft, Math.max(0, drag.left + dx))}px`
-    panel.style.top = `${Math.min(maxTop, Math.max(0, drag.top + dy))}px`
-    panel.style.right = 'auto'
-    panel.style.bottom = 'auto'
+    const nextLeft = Math.min(maxLeft, Math.max(0, drag.left + dx))
+    const nextTop = Math.min(maxTop, Math.max(0, drag.top + dy))
+    // Use important inline coordinates so legacy right/bottom rules cannot lock either axis.
+    panel.style.setProperty('left', `${nextLeft}px`, 'important')
+    panel.style.setProperty('top', `${nextTop}px`, 'important')
+    panel.style.setProperty('right', 'auto', 'important')
+    panel.style.setProperty('bottom', 'auto', 'important')
   }
   const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current
