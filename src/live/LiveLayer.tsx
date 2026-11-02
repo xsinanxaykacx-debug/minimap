@@ -192,6 +192,7 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const [sheetCollapsed, setSheetCollapsed] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{x:number;y:number;left:number;top:number;mobile:boolean;moved:boolean}|null>(null)
   const markersRef = useRef<Marker[]>([])
@@ -394,6 +395,7 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
     dragRef.current = null
   }
 
+  if (!panelOpen && !publisherSession && !viewerSession) return <button className="live-panel-launcher" onClick={() => setPanelOpen(true)}>Canlı Yayın</button>
   if (!supabase) return <div className="live-layer-card live-layer-warning">LAB Supabase Preview anahtarları tanımlı değil.</div>
 
   return (
