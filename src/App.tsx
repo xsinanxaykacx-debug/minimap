@@ -3,7 +3,8 @@ import maplibregl, { type Map as MapLibreMap, type Marker } from 'maplibre-gl'
 import Hls from 'hls.js'
 import LiveLayer from './live/LiveLayer'
 import {
-  Activity, Camera, Crosshair, MapPinned, Menu, Minus, Plus, Search, Signal, X,
+  Activity, Camera, Crosshair, Map as MapIcon, Layers3, Settings2, SlidersHorizontal,
+  ShieldCheck, ChevronDown, MapPinned, Menu, Minus, Plus, Search, Signal, X,
 } from 'lucide-react'
 
 type CameraRecord = { id: string; name: string; lat: number; lng: number; videoUrl: string }
@@ -71,6 +72,7 @@ function App() {
   const mapRef = useRef<MapLibreMap | null>(null)
   const markersRef = useRef<Marker[]>([])
   const [layers, setLayers] = useState(initialLayers)
+  const [activeTool, setActiveTool] = useState('map')
   const [menuOpen, setMenuOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [mapReady, setMapReady] = useState(false)
