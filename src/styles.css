@@ -726,3 +726,63 @@ html,body,#root,.app-shell,.workspace,.map-stage{background:#0B192C!important}
     overflow:auto!important;border-radius:16px 16px 0 0!important;
   }
 }
+
+
+/* AYTAR LAB — narrowly scoped requested UI fixes */
+.map-toolbar .search-box{
+  background:#1E293B!important;
+  border:1px solid #334155!important;
+  box-shadow:none!important;
+}
+.map-toolbar .search-box input{
+  background:#1E293B!important;
+  color:#F8F9FA!important;
+  border-color:#334155!important;
+}
+.map-toolbar .search-box input::placeholder,
+.map-toolbar .search-box kbd{color:#94A3B8!important}
+
+/* Both authentication actions use the same light-sky treatment */
+.live-layer-actions button,
+.live-layer-actions button.secondary{
+  background:#38BDF8!important;
+  border:1px solid #38BDF8!important;
+  color:#0F172A!important;
+}
+.live-layer-actions button:hover,
+.live-layer-actions button.secondary:hover{
+  background:#0EA5E9!important;
+  border-color:#0EA5E9!important;
+  color:#0F172A!important;
+}
+
+/* Keep zoom controls anchored to the map's lower-right corner */
+.map-stage .map-tools-right{
+  position:absolute!important;
+  z-index:25!important;
+  top:auto!important;
+  right:18px!important;
+  bottom:26px!important;
+  left:auto!important;
+  display:flex!important;
+  flex-direction:column!important;
+  background:#0B192C!important;
+  border:1px solid #1E293B!important;
+}
+.map-stage .map-tools-right .map-control{
+  background:#0B192C!important;
+  border:1px solid #1E293B!important;
+  color:#FFFFFF!important;
+}
+
+/* The legacy left rail stays fully hidden until hamburger opens the drawer */
+.sidebar{
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transform:translateX(-105%)!important;
+}
+.sidebar.sidebar-open{
+  visibility:visible!important;
+  pointer-events:auto!important;
+  transform:translateX(0)!important;
+}
