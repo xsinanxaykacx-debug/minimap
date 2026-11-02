@@ -77,7 +77,6 @@ function App() {
   const [search, setSearch] = useState('')
   const [mapReady, setMapReady] = useState(false)
   const [activeTool, setActiveTool] = useState('layers')
-  const [notice, setNotice] = useState('Laboratuvar haritası hazır')
   const [cameraCount, setCameraCount] = useState(0)
   const [cameraLoading, setCameraLoading] = useState(false)
   const [cameraError, setCameraError] = useState('')
@@ -172,14 +171,14 @@ function App() {
         if (!loadedCameras.length) throw new Error('Servis yanıtında koordinat ve yayın adresi bulunan kamera kaydı bulunamadı.')
         setCameraCount(loadedCameras.length)
         renderVisibleMarkers()
-        setNotice(`İBB kamera servisi: ${loadedCameras.length} kayıt · harita alanına göre filtreleniyor`)
+        
         setCameraError('')
         setCameraLoading(false)
       })
       .catch(error => {
         if (cancelled) return
         setCameraError(error instanceof Error ? error.message : 'Kamera verisi alınamadı')
-        setNotice('İBB kamera servisine bağlanılamadı')
+        
         setCameraLoading(false)
       })
     return () => {
@@ -192,15 +191,15 @@ function App() {
 
   const toggleLayer = (key: LayerKey) => {
     setLayers(current => ({ ...current, [key]: !current[key] }))
-    setNotice(key === 'cameras' ? (layers.cameras ? 'İBB kamera katmanı kapatıldı' : 'İBB kamera servisine bağlanılıyor…') : `Bildirimler ${layers.reports ? 'kapatıldı' : 'açıldı'}`)
+    
   }
   const zoom = (delta: number) => mapRef.current?.zoomTo((mapRef.current.getZoom() || 11) + delta, { duration: 350 })
   const locate = () => {
-    if (!navigator.geolocation) { setNotice('Bu tarayıcı konum özelliğini desteklemiyor'); return }
-    setNotice('Konum bekleniyor…')
+    if (!navigator.geolocation) {  return }
+    
     navigator.geolocation.getCurrentPosition(
-      position => { mapRef.current?.flyTo({ center: [position.coords.longitude, position.coords.latitude], zoom: 15, pitch: 50, duration: 1200 }); setNotice('Konumun haritada gösterildi') },
-      () => setNotice('Konum alınamadı. Tarayıcı iznini kontrol et.'),
+      position => { mapRef.current?.flyTo({ center: [position.coords.longitude, position.coords.latitude], zoom: 15, pitch: 50, duration: 1200 });  },
+      () => ,
       { enableHighAccuracy: true, timeout: 10000 },
     )
   }
@@ -237,7 +236,7 @@ function App() {
               <div className="control-divider" />
               <button className="map-control locate-control" onClick={locate} aria-label="Konumuma git"><Crosshair size={18} /></button>
             </div>
-            <div className="search-box"><Search size={16} /><input value={search} onChange={event => setSearch(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && search.trim()) setNotice(`Arama altyapısı sırada: ${search.trim()}`) }} placeholder="Konum veya adres ara…" /><kbd>ENTER</kbd></div>
+            <div className="search-box"><Search size={16} /><input value={search} onChange={event => setSearch(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && search.trim())  }} placeholder="Konum veya adres ara…" /><kbd>ENTER</kbd></div>
             <button className="toolbar-button" onClick={resetView}><MapPinned size={16} /><span>İstanbul</span><ChevronDown size={14} /></button>
           </div><div className="map-bottom-left"><span className="map-live-dot" /> HARİTA VERİSİ <span className="bottom-divider">•</span> CARTO</div><div className="map-status"><Signal size={13} /><span>{layers.cameras ? cameraLoading ? 'İBB kameralarına bağlanılıyor' : cameraError ? 'Kamera servisi kontrol edilmeli' : `${cameraCount} kamera kaydı · görünüm filtresi aktif` : mapReady ? 'Harita servisi çalışıyor' : 'Harita servisine bağlanılıyor'}</span></div><div className="map-crosshair"><span /><i /></div>
         </section>
