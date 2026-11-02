@@ -168,7 +168,6 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
   const [authSession, setAuthSession] = useState<Session | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
   const [profileStatus, setProfileStatus] = useState('')
   const [sessions, setSessions] = useState<LiveSession[]>([])
   const [publisherSession, setPublisherSession] = useState<{ id: string; room_id: string } | null>(null)
@@ -334,8 +333,8 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
           <input value={email} onChange={event => setEmail(event.target.value)} placeholder="E-posta" type="email" />
           <input value={password} onChange={event => setPassword(event.target.value)} placeholder="Şifre" type="password" />
           <div className="live-layer-actions">
-            <button disabled={busy} onClick={() => { setAuthMode('signin'); void authenticate('signin') }}>Giriş yap</button>
-            <button className="secondary" disabled={busy} onClick={() => { setAuthMode('signup'); void authenticate('signup') }}>Kayıt ol</button>
+            <button disabled={busy} onClick={() => { void authenticate('signin') }}>Giriş yap</button>
+            <button className="secondary" disabled={busy} onClick={() => { void authenticate('signup') }}>Kayıt ol</button>
           </div>
           {notice && <small>{notice}</small>}
         </div>
