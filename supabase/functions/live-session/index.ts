@@ -72,15 +72,40 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "POST required" }, 405);
 
   try {
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-    if (!token) return json({ error: "Bearer token required" }, 401);
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const jitterSecret = Deno.env.get("JITTER_HMAC_SECRET");
-    if (!supabaseUrl || !anonKey || !serviceKey || !jitterSecret) {
+    const cronSecret = Deno.env.get("LIVE_SESSION_CRON_SECRET");
+    if (!supabaseUrl || !serviceKey) {
+      return json({ error: "Server configuration is incomplete" }, 500);
+    }
+
+    // Independent fallback for projects where pg_cron cannot be enabled:
+    // an external scheduler (e.g. Cloudflare Worker Cron Trigger) calls this
+    // action once per minute using LIVE_SESSION_CRON_SECRET.
+    if (req.headers.get("x-cron-secret") && cronSecret &&
+        req.headers.get("x-cron-secret") === cronSecret) {
+      const body = await req.json();
+      if (body?.action !== "cleanup") return json({ error: "Unknown cron action" }, 400);
+      const admin = createClient(supabaseUrl, serviceKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data, error } = await admin
+        .from("live_sessions")
+        .update({ ended_at: new Date().toISOString() })
+        .is("ended_at", null)
+        .lt("last_seen_at", cutoff)
+        .select("id");
+      if (error) return json({ error: "Stale session cleanup failed" }, 500);
+      return json({ cleaned: data?.length ?? 0 });
+    }
+
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    if (!token) return json({ error: "Bearer token required" }, 401);
+    if (!anonKey || !jitterSecret) {
       return json({ error: "Server configuration is incomplete" }, 500);
     }
 
