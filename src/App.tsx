@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import maplibregl, { type Map as MapLibreMap, type Marker } from 'maplibre-gl'
+import maplibregl, { type Map as MapLibreMap } from 'maplibre-gl'
 import Hls from 'hls.js'
 import {
   Activity, Camera, ChevronDown, Crosshair, Layers3, Map as MapIcon,
   MapPinned, Menu, Minus, Plus, Radio, Search, Settings2, ShieldCheck,
-  Signal, SlidersHorizontal, X, Play, Wifi, WifiOff,
+  Signal, SlidersHorizontal, X ,
 } from 'lucide-react'
 
 type CameraRecord = { id: string; name: string; lat: number; lng: number; videoUrl: string }
