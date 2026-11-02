@@ -79,7 +79,18 @@ DECLARE
   chosen_slot smallint;
 BEGIN
   IF TG_OP = 'INSERT' THEN
-    -- Serialize all concurrent starts. The trigger overwrites any supplied slot.
+    -- service_role bypasses RLS, so enforce active membership again in the DB.
+    IF NOT EXISTS (
+      SELECT 1
+      FROM public.profiles AS p
+      WHERE p.id = NEW.user_id
+        AND p.status = 'active'::public.member_status
+    ) THEN
+      RAISE EXCEPTION 'Active membership required'
+        USING ERRCODE = '42501';
+    END IF;
+
+    -- Serialize all concurrent starts. The trigger overwrites all supplied slots.
     PERFORM pg_catalog.pg_advisory_xact_lock(74102110);
 
     SELECT candidate.slot_no
