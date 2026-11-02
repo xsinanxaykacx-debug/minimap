@@ -68,3 +68,5 @@ END
 $$;
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT ON TABLE public.profiles TO authenticated;
