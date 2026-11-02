@@ -93,4 +93,4 @@ CREATE INDEX IF NOT EXISTS live_sessions_user_active_idx
 ALTER TABLE public.live_sessions ENABLE ROW LEVEL SECURITY;
 GRANT SELECT ON TABLE public.live_sessions TO authenticated;
 GRANT ALL ON TABLE public.live_sessions TO service_role;
-REVOKE INSERT, UPDATE, DELETE ON TABLE public.live_sessions FROM anon, authenticated;
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.live_sessions FROM PUBLIC, anon, authenticated;
