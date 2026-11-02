@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl, { type Map as MapLibreMap, type Marker } from 'maplibre-gl'
-import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js'
+import { createClient, type RealtimeChannel, type Session, type SupabaseClient } from '@supabase/supabase-js'
 
 type LiveSession = {
   id: string
@@ -22,7 +22,7 @@ const rtcConfig: RTCConfiguration = {
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
 }
 
-async function sendSignal(channel: ReturnType<SupabaseClient['channel']>, payload: SignalMessage) {
+async function sendSignal(channel: RealtimeChannel, payload: SignalMessage) {
   await channel.send({ type: 'broadcast', event: 'signal', payload })
 }
 
@@ -104,7 +104,6 @@ export function useViewer(
   const [status, setStatus] = useState('Yayın bağlantısı bekleniyor')
   useEffect(() => {
     if (!supabase || !roomId || !viewerId) return
-    let disposed = false
     let pc: RTCPeerConnection | null = null
     const channel = supabase.channel(`room:${roomId}`, {
       config: { private: true, broadcast: { self: false, ack: true } },
@@ -151,7 +150,6 @@ export function useViewer(
       if (state === 'CHANNEL_ERROR' || state === 'TIMED_OUT') setStatus('Realtime signaling bağlantı hatası')
     })
     return () => {
-      disposed = true
       if (pc) pc.close()
       setRemoteStream(null)
       void send({ type: 'viewer-left', from: viewerId }).catch(() => undefined)
@@ -267,14 +265,14 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
 
   useEffect(() => () => publisherStream?.getTracks().forEach(track => track.stop()), [publisherStream])
 
-  const authenticate = async () => {
+  const authenticate = async (mode: 'signin' | 'signup') => {
     if (!supabase || !email.trim() || !password) return
     setBusy(true)
-    const result = authMode === 'signin'
+    const result = mode === 'signin'
       ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
       : await supabase.auth.signUp({ email: email.trim(), password })
     setBusy(false)
-    setNotice(result.error?.message ?? (authMode === 'signup' ? 'Kayıt alındı. E-posta onayı gerekiyorsa gelen kutunu kontrol et.' : 'Giriş yapıldı'))
+    setNotice(result.error?.message ?? (mode === 'signup' ? 'Kayıt alındı. E-posta onayı gerekiyorsa gelen kutunu kontrol et.' : 'Giriş yapıldı'))
   }
 
   const startBroadcast = async () => {
@@ -313,13 +311,6 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
     await supabase.functions.invoke('live-session', {
       body: { action: 'end', session_id: publisherSession.id },
     })
-    const channel = supabase.channel(`room:${publisherSession.room_id}`, { config: { private: true } })
-    await channel.subscribe()
-    await channel.send({
-      type: 'broadcast', event: 'signal',
-      payload: { type: 'session-ended', from: authSession?.user.id ?? 'publisher' },
-    })
-    await supabase.removeChannel(channel)
     publisherStream?.getTracks().forEach(track => track.stop())
     setPublisherStream(null)
     setPublisherSession(null)
@@ -343,8 +334,8 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
           <input value={email} onChange={event => setEmail(event.target.value)} placeholder="E-posta" type="email" />
           <input value={password} onChange={event => setPassword(event.target.value)} placeholder="Şifre" type="password" />
           <div className="live-layer-actions">
-            <button disabled={busy} onClick={() => { setAuthMode('signin'); void authenticate() }}>Giriş yap</button>
-            <button className="secondary" disabled={busy} onClick={() => { setAuthMode('signup'); void authenticate() }}>Kayıt ol</button>
+            <button disabled={busy} onClick={() => { setAuthMode('signin'); void authenticate('signin') }}>Giriş yap</button>
+            <button className="secondary" disabled={busy} onClick={() => { setAuthMode('signup'); void authenticate('signup') }}>Kayıt ol</button>
           </div>
           {notice && <small>{notice}</small>}
         </div>
