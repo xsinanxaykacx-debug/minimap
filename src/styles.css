@@ -429,3 +429,44 @@ html,body,#root,.app-shell,.workspace,.topbar,.sidebar,
 .camera-marker-dot{background:#8DFF00!important;border-color:#FFFFFF!important;box-shadow:0 0 8px #8DFF00!important}
 .camera-marker:hover{background:#123454!important}
 .camera-error{background:#123454!important;border-color:#FF3B30!important;color:#A7B2C0!important}
+
+
+/* FINAL FIX: free 2-axis desktop drag + exact blue header/PiP */
+@media(min-width:768px){
+  .live-layer-ui{
+    position:fixed!important;
+    right:auto!important;
+    bottom:auto!important;
+    max-width:calc(100vw - 24px)!important;
+    max-height:calc(100vh - 24px)!important;
+    touch-action:auto!important;
+  }
+  .live-layer-drag-handle{touch-action:none!important;cursor:grab!important}
+  .live-layer-drag-handle:active{cursor:grabbing!important}
+}
+.topbar{
+  background:#0F2A4A!important;
+  border-color:#1A3B5C!important;
+}
+.live-layer-ui,.live-layer-card,.live-layer-drag-handle{
+  background:#0F2A4A!important;
+  border-color:#1A3B5C!important;
+}
+.live-layer-card{
+  border:1px solid #1A3B5C!important;
+}
+.live-layer-card button.danger,
+.live-layer-actions button.danger{
+  background:#2A9D8F!important;
+  border:1px solid #1A3B5C!important;
+  color:#F8F9FA!important;
+}
+@media(max-width:767px){
+  .live-layer-ui{
+    position:absolute!important;
+    left:0!important;right:0!important;top:auto!important;bottom:0!important;
+    max-height:40vh!important;
+    background:#0F2A4A!important;
+    border-color:#1A3B5C!important;
+  }
+}
