@@ -3,7 +3,7 @@ import maplibregl, { type Map as MapLibreMap, type Marker } from 'maplibre-gl'
 import Hls from 'hls.js'
 import LiveLayer from './live/LiveLayer'
 import {
-  Activity, Crosshair, Minus, Plus, Search, Settings2, UserRound,
+  Camera, Crosshair, Layers3, Minus, Plus, Search, Settings2, UserRound,
 } from 'lucide-react'
 
 type CameraRecord = { id: string; name: string; lat: number; lng: number; videoUrl: string }
@@ -69,6 +69,7 @@ function App() {
   const mapRef = useRef<MapLibreMap | null>(null)
   const markersRef = useRef<Marker[]>([])
   const [search, setSearch] = useState('')
+  const [livePanelOpen, setLivePanelOpen] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const [cameraCount, setCameraCount] = useState(0)
   const [cameraLoading, setCameraLoading] = useState(false)
@@ -198,15 +199,17 @@ function App() {
     <main className="app-shell">
       <MapCanvas onReady={handleMapReady} />
       <div className="map-vignette" />
-      <LiveLayer map={mapReady ? mapRef.current : null} />
+      <LiveLayer map={mapReady ? mapRef.current : null} open={livePanelOpen} onClose={() => setLivePanelOpen(false)} />
       <div className="map-search">
         <Search size={17} />
         <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Konum veya adres ara…" />
       </div>
-      <div className="map-zoom">
+      <div className="map-zoom map-right-rail">
         <button className="map-control" onClick={() => zoom(1)} aria-label="Yakınlaştır"><Plus size={19} /></button>
         <button className="map-control" onClick={() => zoom(-1)} aria-label="Uzaklaştır"><Minus size={19} /></button>
         <button className="map-control" onClick={locate} aria-label="Konumuma git"><Crosshair size={18} /></button>
+        <button className="map-control" aria-label="Katmanlar" title="Katmanlar"><Layers3 size={18} /></button>
+        <button className={"map-control webcam-control" + (livePanelOpen ? " is-active" : "")} onClick={() => setLivePanelOpen(value => !value)} aria-label="Webcam / Canlı yayın" title="Canlı yayın"><Camera size={18} /></button>
       </div>
       <div className="map-top-right">
         <button className="map-control round-control" title="Ayarlar" aria-label="Ayarlar"><Settings2 size={17} /></button>
