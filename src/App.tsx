@@ -94,6 +94,70 @@ function App() {
       return
     }
     let cancelled = false
+    let loadedCameras: CameraRecord[] = []
+    const renderVisibleMarkers = () => {
+      const bounds = map.getBounds()
+      const visible = loadedCameras.filter(camera => bounds.contains([camera.lng, camera.lat]))
+      markersRef.current.forEach(marker => marker.remove())
+      markersRef.current = visible.map(camera => {
+        const element = document.createElement('button')
+        element.type = 'button'
+        element.className = 'camera-marker'
+        element.title = camera.name
+        const dot = document.createElement('span')
+        dot.className = 'camera-marker-dot'
+        const label = document.createElement('span')
+        label.className = 'camera-marker-label'
+        label.textContent = camera.name
+        element.append(dot, label)
+        element.addEventListener('click', () => {
+          const wrapper = document.createElement('div')
+          wrapper.className = 'camera-popup'
+          const heading = document.createElement('div')
+          heading.className = 'camera-popup-title'
+          heading.textContent = `Kamera: ${camera.name}`
+          const status = document.createElement('div')
+          status.className = 'camera-popup-status'
+          status.textContent = 'Canlı yayın bağlantısı hazırlanıyor…'
+          const video = document.createElement('video')
+          video.className = 'camera-video'
+          video.controls = true
+          video.autoplay = true
+          video.muted = true
+          video.playsInline = true
+          wrapper.append(heading, status, video)
+          const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '360px', offset: 18 })
+            .setLngLat([camera.lng, camera.lat]).setDOMContent(wrapper).addTo(map)
+          let hls: Hls | null = null
+          const cleanup = () => {
+            if (hls) { hls.destroy(); hls = null }
+            video.pause()
+            video.removeAttribute('src')
+            video.load()
+          }
+          popup.on('close', cleanup)
+          if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = camera.videoUrl
+            video.addEventListener('loadedmetadata', () => { status.textContent = 'CANLI YAYIN' }, { once: true })
+            video.addEventListener('error', () => { status.textContent = 'Yayın açılamadı · HLS/CORS kontrol edilmeli' }, { once: true })
+          } else if (Hls.isSupported()) {
+            hls = new Hls({ enableWorker: true, lowLatencyMode: true })
+            hls.loadSource(camera.videoUrl)
+            hls.attachMedia(video)
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+              status.textContent = 'CANLI YAYIN'
+              void video.play().catch(() => { status.textContent = 'Oynatmak için video üzerindeki oynat düğmesine bas' })
+            })
+            hls.on(Hls.Events.ERROR, (_event, data) => {
+              if (data.fatal) status.textContent = 'Yayın alınamadı · İBB HLS CORS/proxy ayarı gerekiyor'
+            })
+          } else status.textContent = 'Bu tarayıcı HLS oynatmayı desteklemiyor'
+        })
+        return new maplibregl.Marker({ element, anchor: 'bottom' }).setLngLat([camera.lng, camera.lat]).addTo(map)
+      })
+    }
+    const onMoveEnd = () => renderVisibleMarkers()
+    map.on('moveend', onMoveEnd)
     setCameraLoading(true)
     setCameraError('')
     fetch(cameraEndpoint, { headers: { Accept: 'application/json' } })
@@ -103,69 +167,13 @@ function App() {
       })
       .then(payload => {
         if (cancelled) return
-        const cameras = normalizeCameras(payload)
-        if (!cameras.length) throw new Error('Servis yanıtında koordinat ve yayın adresi bulunan kamera kaydı bulunamadı.')
-        setCameraCount(cameras.length)
-        const bounds = map.getBounds()
-        const visible = cameras.filter(camera => bounds.contains([camera.lng, camera.lat]))
-        const addMarkers = (records: CameraRecord[]) => {
-          markersRef.current.forEach(marker => marker.remove())
-          markersRef.current = records.map(camera => {
-            const element = document.createElement('button')
-            element.type = 'button'
-            element.className = 'camera-marker'
-            element.title = camera.name
-            const dot = document.createElement('span')
-            dot.className = 'camera-marker-dot'
-            const label = document.createElement('span')
-            label.className = 'camera-marker-label'
-            label.textContent = camera.name
-            element.append(dot, label)
-            element.addEventListener('click', () => {
-              const wrapper = document.createElement('div')
-              wrapper.className = 'camera-popup'
-              const heading = document.createElement('div')
-              heading.className = 'camera-popup-title'
-              heading.textContent = `Kamera: ${camera.name}`
-              const status = document.createElement('div')
-              status.className = 'camera-popup-status'
-              status.textContent = 'Canlı yayın bağlantısı hazırlanıyor…'
-              const video = document.createElement('video')
-              video.className = 'camera-video'
-              video.controls = true
-              video.autoplay = true
-              video.muted = true
-              video.playsInline = true
-              wrapper.append(heading, status, video)
-              const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '360px', offset: 18 })
-                .setLngLat([camera.lng, camera.lat]).setDOMContent(wrapper).addTo(map)
-              let hls: Hls | null = null
-              const cleanup = () => { if (hls) { hls.destroy(); hls = null } video.pause(); video.removeAttribute('src'); video.load() }
-              popup.on('close', cleanup)
-              if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                video.src = camera.videoUrl
-                video.addEventListener('loadedmetadata', () => { status.textContent = 'CANLI YAYIN' }, { once: true })
-                video.addEventListener('error', () => { status.textContent = 'Yayın açılamadı · HLS/CORS kontrol edilmeli' }, { once: true })
-              } else if (Hls.isSupported()) {
-                hls = new Hls({ enableWorker: true, lowLatencyMode: true })
-                hls.loadSource(camera.videoUrl)
-                hls.attachMedia(video)
-                hls.on(Hls.Events.MANIFEST_PARSED, () => { status.textContent = 'CANLI YAYIN'; void video.play().catch(() => { status.textContent = 'Oynatmak için video üzerindeki ▶ düğmesine bas' }) })
-                hls.on(Hls.Events.ERROR, (_event, data) => {
-                  if (data.fatal) status.textContent = 'Yayın alınamadı · İBB HLS CORS/proxy ayarı gerekiyor'
-                })
-              } else status.textContent = 'Bu tarayıcı HLS oynatmayı desteklemiyor'
-            })
-            return new maplibregl.Marker({ element, anchor: 'bottom' }).setLngLat([camera.lng, camera.lat]).addTo(map)
-          })
-        }
-        addMarkers(visible)
-        const refreshVisible = () => addMarkers(cameras.filter(camera => map.getBounds().contains([camera.lng, camera.lat])))
-        map.on('moveend', refreshVisible)
-        setNotice(`İBB kamera servisi: ${cameras.length} kayıt · ${visible.length} kamera görünümde`)
+        loadedCameras = normalizeCameras(payload)
+        if (!loadedCameras.length) throw new Error('Servis yanıtında koordinat ve yayın adresi bulunan kamera kaydı bulunamadı.')
+        setCameraCount(loadedCameras.length)
+        renderVisibleMarkers()
+        setNotice(`İBB kamera servisi: ${loadedCameras.length} kayıt · harita alanına göre filtreleniyor`)
         setCameraError('')
         setCameraLoading(false)
-        return () => map.off('moveend', refreshVisible)
       })
       .catch(error => {
         if (cancelled) return
@@ -173,7 +181,12 @@ function App() {
         setNotice('İBB kamera servisine bağlanılamadı')
         setCameraLoading(false)
       })
-    return () => { cancelled = true; markersRef.current.forEach(marker => marker.remove()); markersRef.current = [] }
+    return () => {
+      cancelled = true
+      map.off('moveend', onMoveEnd)
+      markersRef.current.forEach(marker => marker.remove())
+      markersRef.current = []
+    }
   }, [layers.cameras, mapReady])
 
   const toggleLayer = (key: LayerKey) => {
