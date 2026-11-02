@@ -119,3 +119,122 @@ body{background:var(--ay-bg);color:var(--ay-text);overflow:hidden}
 
 .map-notice{position:absolute;z-index:3;top:132px;left:18px;max-width:min(420px,calc(100% - 36px));padding:8px 11px;border:1px solid var(--ay-border);border-radius:9px;background:rgba(43,35,32,.78);backdrop-filter:blur(14px);color:#ead7c6;font:9px 'DM Mono',monospace;box-shadow:0 8px 22px #08050355}
 @media(max-width:650px){.map-notice{top:116px;left:10px;max-width:calc(100% - 20px);font-size:8px}}
+
+
+/* AYTAR OCEAN BLUE UI — exact requested palette */
+:root{
+  --ay-bg:#0F2A4A;
+  --ay-panel:#0F2A4A;
+  --ay-selected:#1A3B5C;
+  --ay-text:#F8F9FA;
+  --ay-muted:#F8F9FA;
+  --ay-border:#1A3B5C;
+  --ay-accent:#2A9D8F;
+  --ay-accent-hover:#2A9D8F;
+  color-scheme:dark;
+}
+html,body,#root,.app-shell{background:#0F2A4A;color:#F8F9FA}
+.topbar{
+  background:#0F2A4A!important;
+  border-color:#1A3B5C!important;
+  color:#F8F9FA!important;
+}
+.brand-mark{background:#1A3B5C!important;border-color:#1A3B5C!important;color:#2A9D8F!important;box-shadow:none!important}
+.brand-name,.brand-name span,.brand-subtitle,.topbar-center,.connection{color:#F8F9FA!important}
+.environment-dot,.pulse-dot,.footer-led,.statusbar-dot{background:#749D37!important;box-shadow:none!important}
+.profile-button,.icon-button{background:#1A3B5C!important;border-color:#1A3B5C!important;color:#F8F9FA!important}
+.icon-button:hover{background:#2A9D8F!important;border-color:#2A9D8F!important;color:#F8F9FA!important}
+.workspace{display:block!important}
+.map-stage{background:#eaf2f7!important}
+.map-canvas canvas{filter:none!important}
+.map-vignette{display:none!important}
+
+/* Sidebar stays hidden until the top-right hamburger is pressed */
+.sidebar{
+  background:#0F2A4A!important;
+  border:1px solid #1A3B5C!important;
+  transform:translateX(calc(-100% - 24px))!important;
+}
+.sidebar.sidebar-open{transform:translateX(0)!important}
+.sidebar-heading,.sidebar-section-title,.section-heading,
+.sidebar-footer,.version,.layer-copy strong,.layer-copy small,
+.nav-item,.sidebar-note strong,.sidebar-note p{color:#F8F9FA!important}
+.nav-item:hover,.nav-item.selected{background:#1A3B5C!important;color:#F8F9FA!important;box-shadow:inset 3px 0 #2A9D8F!important}
+.nav-item.selected svg,.nav-indicator{color:#2A9D8F!important;background:#2A9D8F!important}
+.sidebar-separator,.control-divider{background:#1A3B5C!important}
+.layer-row{border-color:#1A3B5C!important}
+.layer-row:hover,.layer-row:focus-visible{background:#1A3B5C!important}
+.layer-symbol,.report-symbol,.camera-symbol{background:#1A3B5C!important;color:#00B4D8!important}
+.switch.on{background:#2A9D8F!important}
+.switch.on:after{background:#F8F9FA!important;box-shadow:none!important}
+.sidebar-note{background:#1A3B5C!important;border-color:#1A3B5C!important}
+.note-icon{color:#2A9D8F!important}
+
+/* Search and map controls */
+.map-toolbar{top:82px;left:50%;right:auto;transform:translateX(-50%);width:min(760px,calc(100% - 36px))}
+.search-box,.toolbar-button,.map-tools-right,.map-control,
+.map-bottom-left,.map-status,.map-notice{
+  background:#0F2A4A!important;
+  border-color:#1A3B5C!important;
+  color:#F8F9FA!important;
+  backdrop-filter:blur(14px);
+}
+.search-box input,.search-box input::placeholder,.search-box kbd,
+.toolbar-button,.map-control,.map-status,.map-bottom-left,.map-notice{color:#F8F9FA!important}
+.search-box svg,.toolbar-button svg,.map-status svg,.locate-control{color:#2A9D8F!important}
+.map-control:hover,.toolbar-button:hover{background:#1A3B5C!important;color:#F8F9FA!important}
+.search-box kbd{border-color:#1A3B5C!important}
+.map-live-dot{background:#749D37!important;box-shadow:none!important}
+
+/* Main actions, including the end-broadcast action */
+.live-layer-card,.live-layer-card input,.live-viewer-panel video{
+  background:#0F2A4A!important;
+  border-color:#1A3B5C!important;
+  color:#F8F9FA!important;
+}
+.live-layer-card>strong,.live-layer-heading strong,.live-layer-card small,
+.live-layer-heading span,.live-layer-heading small{color:#F8F9FA!important}
+.live-layer-card>button,.live-layer-actions button,
+.live-layer-heading button,.live-layer-card button.danger,
+.live-layer-actions button.danger{
+  background:#2A9D8F!important;
+  border:1px solid #1A3B5C!important;
+  color:#F8F9FA!important;
+}
+.live-layer-card>button:hover,.live-layer-actions button:hover,
+.live-layer-heading button:hover{background:#2A9D8F!important;filter:brightness(.9)}
+.live-layer-card button.secondary,.live-layer-actions button.secondary,
+.live-layer-heading button.secondary{background:#1A3B5C!important;border-color:#1A3B5C!important;color:#F8F9FA!important}
+.live-layer-card input:focus{border-color:#2A9D8F!important}
+.live-viewer-panel{border-top-color:#1A3B5C!important}
+.live-layer-ui{right:18px!important;left:auto!important;bottom:18px!important}
+.live-layer-card{background:#0F2A4A!important;border:1px solid #1A3B5C!important;box-shadow:0 12px 32px #071b30!important}
+
+/* Markers */
+.live-session-marker{
+  background:#FF5722!important;
+  border:2px solid #F8F9FA!important;
+  color:#F8F9FA!important;
+  box-shadow:0 0 0 0 #FF572288,0 0 18px #FF5722aa!important;
+  animation:live-session-pulse 1.8s infinite!important;
+}
+.live-session-marker:hover{background:#FF5722!important;filter:brightness(1.12)}
+@keyframes live-session-pulse{
+  0%{box-shadow:0 0 0 0 #FF572288,0 0 14px #FF572288}
+  70%{box-shadow:0 0 0 13px #FF572200,0 0 22px #FF5722aa}
+  100%{box-shadow:0 0 0 0 #FF572200,0 0 14px #FF572288}
+}
+.camera-marker{background:#0F2A4A!important;border-color:#00B4D8!important;color:#F8F9FA!important;box-shadow:0 0 12px #00B4D855!important}
+.camera-marker-dot{background:#00B4D8!important;border-color:#F8F9FA!important;box-shadow:0 0 8px #00B4D8!important}
+.camera-marker:hover{background:#1A3B5C!important}
+.camera-popup,.camera-popup-title,.camera-popup-status{color:#F8F9FA!important}
+.maplibregl-popup-content{background:#0F2A4A!important;border:1px solid #1A3B5C!important;color:#F8F9FA!important}
+.maplibregl-popup-tip{border-top-color:#0F2A4A!important;border-bottom-color:#0F2A4A!important}
+.maplibregl-popup-close-button{color:#F8F9FA!important}
+.maplibregl-ctrl-attrib{background:#0F2A4A!important;color:#F8F9FA!important}
+.maplibregl-ctrl-attrib a{color:#2A9D8F!important}
+.camera-error{background:#1A3B5C!important;border-color:#1A3B5C!important;color:#F8F9FA!important}
+@media(max-width:650px){
+ .map-toolbar{top:68px;left:10px;right:10px;transform:none;width:auto}
+ .live-layer-ui{right:10px!important;left:auto!important;bottom:50px!important}
+}
