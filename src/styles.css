@@ -116,3 +116,6 @@ body{background:var(--ay-bg);color:var(--ay-text);overflow:hidden}
  .live-layer-ui{right:10px;bottom:50px;left:auto;width:min(250px,calc(100% - 20px));max-height:30vh}
  .live-layer-card{padding:9px;gap:6px}.live-viewer-panel video{max-height:88px}
 }
+
+.map-notice{position:absolute;z-index:3;top:132px;left:18px;max-width:min(420px,calc(100% - 36px));padding:8px 11px;border:1px solid var(--ay-border);border-radius:9px;background:rgba(43,35,32,.78);backdrop-filter:blur(14px);color:#ead7c6;font:9px 'DM Mono',monospace;box-shadow:0 8px 22px #08050355}
+@media(max-width:650px){.map-notice{top:116px;left:10px;max-width:calc(100% - 20px);font-size:8px}}
