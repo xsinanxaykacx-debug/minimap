@@ -37,6 +37,7 @@ export function useBroadcast(
     if (!supabase || !roomId || !publisherId || !stream) return
     let disposed = false
     const peers = new Map<string, RTCPeerConnection>()
+    const pendingIce = new Map<string, RTCIceCandidateInit[]>()
     const channel = supabase.channel(`room:${roomId}`, {
       config: { private: true, broadcast: { self: false, ack: true } },
     })
@@ -44,6 +45,7 @@ export function useBroadcast(
       const peer = peers.get(id)
       if (peer) peer.close()
       peers.delete(id)
+      pendingIce.delete(id)
     }
     const createPeer = async (viewerId: string) => {
       if (disposed || peers.has(viewerId)) return
@@ -73,10 +75,17 @@ export function useBroadcast(
         void createPeer(message.from).catch(() => setStatus('İzleyici bağlantısı kurulamadı'))
       } else if (message.type === 'answer') {
         const pc = peers.get(message.from)
-        if (pc && message.sdp) void pc.setRemoteDescription(message.sdp).catch(() => closePeer(message.from))
-      } else if (message.type === 'ice') {
+        if (pc && message.sdp) {
+          void pc.setRemoteDescription(message.sdp).then(async () => {
+            const queued = pendingIce.get(message.from) ?? []
+            pendingIce.delete(message.from)
+            for (const candidate of queued) await pc.addIceCandidate(candidate).catch(() => undefined)
+          }).catch(() => closePeer(message.from))
+        }
+      } else if (message.type === 'ice' && message.candidate) {
         const pc = peers.get(message.from)
-        if (pc && message.candidate) void pc.addIceCandidate(message.candidate).catch(() => undefined)
+        if (pc?.remoteDescription) void pc.addIceCandidate(message.candidate).catch(() => undefined)
+        else pendingIce.set(message.from, [...(pendingIce.get(message.from) ?? []), message.candidate])
       } else if (message.type === 'viewer-left') {
         closePeer(message.from)
       }
@@ -105,6 +114,7 @@ export function useViewer(
   useEffect(() => {
     if (!supabase || !roomId || !viewerId) return
     let pc: RTCPeerConnection | null = null
+    const pendingIce: RTCIceCandidateInit[] = []
     const channel = supabase.channel(`room:${roomId}`, {
       config: { private: true, broadcast: { self: false, ack: true } },
     })
@@ -132,11 +142,15 @@ export function useViewer(
           if (pc?.connectionState === 'failed') setStatus('P2P bağlantısı kurulamadı')
         }
         await pc.setRemoteDescription(message.sdp)
+        for (const candidate of pendingIce.splice(0)) {
+          await pc.addIceCandidate(candidate).catch(() => undefined)
+        }
         const answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
         await send({ type: 'answer', from: viewerId, to: message.from, sdp: pc.localDescription ?? answer })
-      } else if (message.type === 'ice' && message.candidate && pc) {
-        await pc.addIceCandidate(message.candidate).catch(() => undefined)
+      } else if (message.type === 'ice' && message.candidate) {
+        if (pc?.remoteDescription) await pc.addIceCandidate(message.candidate).catch(() => undefined)
+        else pendingIce.push(message.candidate)
       } else if (message.type === 'session-ended') {
         setStatus('Yayın sona erdi')
         setRemoteStream(null)
@@ -308,9 +322,14 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
   const endBroadcast = async () => {
     if (!supabase || !publisherSession) return
     setBusy(true)
-    await supabase.functions.invoke('live-session', {
+    const { error } = await supabase.functions.invoke('live-session', {
       body: { action: 'end', session_id: publisherSession.id },
     })
+    if (error) {
+      setNotice('Yayın kapatma isteği başarısız; oturum cron ile kapanacak')
+      setBusy(false)
+      return
+    }
     publisherStream?.getTracks().forEach(track => track.stop())
     setPublisherStream(null)
     setPublisherSession(null)
