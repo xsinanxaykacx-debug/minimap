@@ -435,8 +435,10 @@ html,body,#root,.app-shell,.workspace,.topbar,.sidebar,
 @media(min-width:768px){
   .live-layer-ui{
     position:fixed!important;
-    right:auto!important;
-    bottom:auto!important;
+    right:18px!important;
+    bottom:18px!important;
+    left:auto!important;
+    top:auto!important;
     max-width:calc(100vw - 24px)!important;
     max-height:calc(100vh - 24px)!important;
     touch-action:auto!important;
