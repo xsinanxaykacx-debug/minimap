@@ -2,16 +2,17 @@
 -- DROP POLICY IF EXISTS live_sessions_select_own ON public.live_sessions;
 -- DROP POLICY IF EXISTS live_sessions_insert_own_member ON public.live_sessions;
 -- DROP POLICY IF EXISTS live_sessions_update_own_member ON public.live_sessions;
+-- DROP POLICY IF EXISTS profiles_select_own ON public.profiles;
 -- DROP TRIGGER IF EXISTS live_sessions_enforce_global_limit ON public.live_sessions;
 -- DROP FUNCTION IF EXISTS public.enforce_live_session_limit();
 
--- RLS policies are created conditionally so re-running this file is safe.
+-- The profile policy is deliberately read-only: clients cannot promote
+-- themselves by writing membership_status.
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'profiles'
+    WHERE schemaname = 'public' AND tablename = 'profiles'
       AND policyname = 'profiles_select_own'
   ) THEN
     CREATE POLICY profiles_select_own
@@ -21,8 +22,7 @@ BEGIN
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'live_sessions'
+    WHERE schemaname = 'public' AND tablename = 'live_sessions'
       AND policyname = 'live_sessions_select_own'
   ) THEN
     CREATE POLICY live_sessions_select_own
@@ -32,33 +32,46 @@ BEGIN
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'live_sessions'
+    WHERE schemaname = 'public' AND tablename = 'live_sessions'
       AND policyname = 'live_sessions_insert_own_member'
   ) THEN
     CREATE POLICY live_sessions_insert_own_member
       ON public.live_sessions FOR INSERT TO authenticated
       WITH CHECK (
         user_id = (SELECT auth.uid())
-        AND (SELECT public.is_active_member())
+        AND EXISTS (
+          SELECT 1 FROM public.profiles p
+          WHERE p.id = (SELECT auth.uid())
+            AND p.membership_status = 'active'
+            AND p.status::text = 'active'
+        )
       );
   END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'live_sessions'
+    WHERE schemaname = 'public' AND tablename = 'live_sessions'
       AND policyname = 'live_sessions_update_own_member'
   ) THEN
     CREATE POLICY live_sessions_update_own_member
       ON public.live_sessions FOR UPDATE TO authenticated
       USING (
         user_id = (SELECT auth.uid())
-        AND (SELECT public.is_active_member())
+        AND EXISTS (
+          SELECT 1 FROM public.profiles p
+          WHERE p.id = (SELECT auth.uid())
+            AND p.membership_status = 'active'
+            AND p.status::text = 'active'
+        )
       )
       WITH CHECK (
         user_id = (SELECT auth.uid())
-        AND (SELECT public.is_active_member())
+        AND EXISTS (
+          SELECT 1 FROM public.profiles p
+          WHERE p.id = (SELECT auth.uid())
+            AND p.membership_status = 'active'
+            AND p.status::text = 'active'
+        )
       );
   END IF;
 END
@@ -93,7 +106,6 @@ BEGIN
       RAISE EXCEPTION 'Live session limit reached (10)'
         USING ERRCODE = 'P0001';
     END IF;
-
   ELSE
     IF OLD.ended_at IS NOT NULL AND NEW.ended_at IS NULL THEN
       NEW.started_at := pg_catalog.now();
@@ -113,8 +125,6 @@ BEGIN
           USING ERRCODE = 'P0001';
       END IF;
     ELSIF NEW.ended_at IS NULL THEN
-      -- Active-session updates are heartbeats; clients cannot extend an
-      -- arbitrary timestamp or spoof a future last_seen_at value.
       NEW.last_seen_at := pg_catalog.now();
     ELSE
       NEW.ended_at := COALESCE(NEW.ended_at, pg_catalog.now());
@@ -128,8 +138,7 @@ $$;
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1
-    FROM pg_trigger
+    SELECT 1 FROM pg_trigger
     WHERE tgname = 'live_sessions_enforce_global_limit'
       AND tgrelid = 'public.live_sessions'::regclass
       AND NOT tgisinternal
