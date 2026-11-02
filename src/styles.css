@@ -472,3 +472,145 @@ html,body,#root,.app-shell,.workspace,.topbar,.sidebar,
     border-color:#1A3B5C!important;
   }
 }
+
+
+/* AYTAR UI REVISION — FACEBOOK BLUE / OFF-WHITE / FIRE ACCENTS */
+:root{
+  --ay-facebook-blue:#1877F2;
+  --ay-blue-deep:#145FC0;
+  --ay-text:#F8F9FA;
+  --ay-muted:#C4CDD6;
+  --ay-fire-orange:#FF8A00;
+  --ay-fire-red:#FF3B30;
+  --ay-line:#4A91E8;
+}
+html,body,#root,.app-shell,.workspace,.topbar,.sidebar,
+.live-layer-ui,.live-layer-card,.live-layer-drag-handle{
+  background:#1877F2!important;
+  color:#F8F9FA!important;
+}
+.topbar,.sidebar,.live-layer-ui,.live-layer-card,.live-layer-drag-handle,
+.search-box,.toolbar-button,.map-tools-right,.map-control,
+.map-bottom-left,.map-status{
+  background:#1877F2!important;
+  border-color:#4A91E8!important;
+}
+.topbar{border-bottom:1px solid #4A91E8!important}
+.brand-name,.brand-name span,.brand-subtitle,.topbar-center,
+.connection,.sidebar-heading,.sidebar-section-title,.sidebar-footer,
+.layer-copy strong,.nav-item,.sidebar-note strong,
+.live-layer-card strong,.live-layer-card label,.live-layer-heading strong{
+  color:#F8F9FA!important;
+}
+.brand-subtitle,.connection,.layer-copy small,.sidebar-note p,
+.live-layer-card small,.live-layer-heading span,.live-layer-heading small,
+.map-status,.map-bottom-left,.version{color:#C4CDD6!important}
+.profile-button,.icon-button,.brand-mark,.nav-item.selected,
+.nav-item:hover,.layer-row:hover,.sidebar-note,.layer-symbol,
+.report-symbol,.camera-symbol,.live-layer-card button.secondary,
+.live-layer-actions button.secondary,.live-layer-heading button.secondary{
+  background:#145FC0!important;
+  border-color:#4A91E8!important;
+  color:#F8F9FA!important;
+}
+.nav-item.selected{box-shadow:inset 3px 0 #FF8A00!important}
+.nav-item.selected svg,.nav-indicator,.note-icon,
+.search-box svg,.toolbar-button svg,.map-status svg,
+.locate-control,.live-layer-drag-grip,.live-layer-drag-hint{color:#FFB14A!important}
+.environment-dot,.pulse-dot,.footer-led,.statusbar-dot,.map-live-dot,
+.switch.on{background:#FF8A00!important;box-shadow:0 0 8px #FF8A0080!important}
+.switch.on:after{background:#F8F9FA!important}
+.sidebar-separator,.control-divider,.layer-row{border-color:#4A91E8!important}
+.search-box input,.search-box input::placeholder,.search-box kbd,
+.live-layer-card input{color:#F8F9FA!important;background:#145FC0!important;border-color:#4A91E8!important}
+.search-box input::placeholder{color:#D6E2F0!important}
+.live-layer-card>button,.live-layer-actions button,.live-layer-heading button{
+  background:#FF8A00!important;border:1px solid #FF8A00!important;color:#14263D!important
+}
+.live-layer-card>button:hover,.live-layer-actions button:hover,
+.live-layer-heading button:hover{background:#FF5722!important;border-color:#FF5722!important}
+.live-layer-card button.danger,.live-layer-actions button.danger{
+  background:#FF5722!important;border-color:#FF5722!important;color:#FFFFFF!important
+}
+.live-viewer-panel video{background:#145FC0!important;border-color:#4A91E8!important}
+.live-layer-ui,.live-layer-card{background:#1877F2!important;border:1px solid #4A91E8!important}
+.live-layer-drag-handle{background:#145FC0!important;border-color:#4A91E8!important;color:#F8F9FA!important}
+.maplibregl-popup-content{background:#1877F2!important;border-color:#4A91E8!important;color:#F8F9FA!important}
+.maplibregl-popup-tip{border-top-color:#1877F2!important;border-bottom-color:#1877F2!important}
+.maplibregl-popup-close-button{color:#F8F9FA!important}
+.maplibregl-ctrl-attrib{background:#1877F2!important;color:#C4CDD6!important}
+.maplibregl-ctrl-attrib a{color:#FFD08A!important}
+
+/* Fire red/orange map pins */
+.live-session-marker{
+  background:linear-gradient(135deg,#FF3B30 0%,#FF8A00 100%)!important;
+  border:2px solid #FFE1B8!important;color:#FFFFFF!important;
+  box-shadow:0 0 12px #FF3B30AA,0 0 24px #FF8A0070!important;
+}
+@keyframes live-session-pulse{
+  0%{box-shadow:0 0 0 0 #FF3B30AA,0 0 14px #FF8A0080}
+  70%{box-shadow:0 0 0 13px #FF3B3000,0 0 24px #FF8A00AA}
+  100%{box-shadow:0 0 0 0 #FF3B3000,0 0 14px #FF8A0080}
+}
+.camera-marker{background:#1877F2!important;border-color:#FF8A00!important;color:#F8F9FA!important;box-shadow:0 0 12px #FF8A0080!important}
+.camera-marker-dot{background:#FF5722!important;border-color:#FFE1B8!important;box-shadow:0 0 8px #FF5722!important}
+.camera-marker:hover{background:#145FC0!important}
+.camera-popup,.camera-popup-title,.camera-popup-status{color:#F8F9FA!important}
+.camera-error{background:#145FC0!important;border-color:#FF5722!important;color:#F8F9FA!important}
+
+/* One toolbar row: zoom/location controls at top-left, search immediately beside them */
+.map-toolbar{
+  position:absolute!important;
+  top:14px!important;
+  left:14px!important;
+  right:auto!important;
+  transform:none!important;
+  width:auto!important;
+  max-width:calc(100% - 28px)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+  z-index:20!important;
+}
+.map-tools-right{
+  position:static!important;
+  display:flex!important;
+  flex:0 0 auto!important;
+  align-items:center!important;
+  gap:4px!important;
+  padding:4px!important;
+  border:1px solid #4A91E8!important;
+  border-radius:12px!important;
+  box-shadow:0 5px 18px #0A3D8050!important;
+}
+.map-tools-right .map-control{position:static!important}
+.map-tools-right .control-divider{height:22px!important;width:1px!important;margin:0 3px!important}
+.map-toolbar .search-box{
+  position:static!important;
+  flex:0 1 350px!important;
+  width:min(350px,38vw)!important;
+  min-width:220px!important;
+  height:42px!important;
+  border:1px solid #4A91E8!important;
+  border-radius:12px!important;
+  box-shadow:0 5px 18px #0A3D8050!important;
+}
+.map-toolbar .toolbar-button{
+  position:static!important;
+  flex:0 0 auto!important;
+  height:42px!important;
+  border:1px solid #4A91E8!important;
+  border-radius:12px!important;
+}
+.map-notice{display:none!important}
+@media(max-width:767px){
+  .map-toolbar{
+    top:10px!important;left:10px!important;right:10px!important;
+    width:auto!important;max-width:none!important;gap:6px!important;
+  }
+  .map-tools-right{order:0!important}
+  .map-toolbar .search-box{order:1!important;flex:1 1 190px!important;width:auto!important;min-width:160px!important}
+  .map-toolbar .toolbar-button{order:2!important}
+}
