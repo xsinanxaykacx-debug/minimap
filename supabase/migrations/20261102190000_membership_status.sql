@@ -1,28 +1,24 @@
--- ROLLBACK SQL (manual; only if this migration is intentionally reverted):
+-- ROLLBACK SQL (manual; do not run as part of deployment rollback):
 -- ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_membership_status_check;
 -- ALTER TABLE public.profiles DROP COLUMN IF EXISTS membership_status;
--- DROP TABLE IF EXISTS public.profiles; -- ONLY if this migration created it and no data depends on it.
+-- DROP TABLE IF EXISTS public.profiles; -- only if this migration created it and no data depends on it.
 --
--- AYTAR-LIVE LAB: additive membership foundation. No migration is applied by this commit.
+-- LAB-only additive membership foundation. This file is not applied by this PR.
 
 DO $$
 BEGIN
   CREATE TYPE public.member_status AS ENUM ('pending', 'active', 'disabled');
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object THEN NULL;
 END
 $$;
 
 DO $$
 BEGIN
   CREATE TYPE public.member_role AS ENUM ('user', 'admin');
-EXCEPTION
-  WHEN duplicate_object THEN NULL;
+EXCEPTION WHEN duplicate_object THEN NULL;
 END
 $$;
 
--- LAB is currently empty; create the minimum compatible profile table when absent.
--- On an existing AYTAR schema, CREATE TABLE IF NOT EXISTS leaves it untouched.
 CREATE TABLE IF NOT EXISTS public.profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   status public.member_status NOT NULL DEFAULT 'pending',
@@ -36,8 +32,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS membership_status text;
 
--- Preserve current AYTAR access: existing active members stay active.
--- Pending/disabled accounts retain their restrictive state.
+-- Backfill follows the existing AYTAR status semantics. Existing active members
+-- stay active; pending and disabled accounts do not gain access.
 UPDATE public.profiles
 SET membership_status = CASE status::text
   WHEN 'active' THEN 'active'
@@ -55,8 +51,7 @@ ALTER TABLE public.profiles
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
+    SELECT 1 FROM pg_constraint
     WHERE conname = 'profiles_membership_status_check'
       AND conrelid = 'public.profiles'::regclass
   ) THEN
@@ -68,5 +63,4 @@ END
 $$;
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
 GRANT SELECT ON TABLE public.profiles TO authenticated;
