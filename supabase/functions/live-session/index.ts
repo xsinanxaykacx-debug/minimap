@@ -76,24 +76,8 @@ Deno.serve(async (req: Request) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const jitterSecret = Deno.env.get("JITTER_HMAC_SECRET");
-    const cronSecret = Deno.env.get("LIVE_SESSION_CRON_SECRET");
     if (!supabaseUrl || !serviceKey) {
       return json({ error: "Server configuration is incomplete" }, 500);
-    }
-
-    // Independent fallback for projects where pg_cron cannot be enabled:
-    // an external scheduler (e.g. Cloudflare Worker Cron Trigger) calls this
-    // action once per minute using LIVE_SESSION_CRON_SECRET.
-    if (req.headers.get("x-cron-secret") && cronSecret &&
-        req.headers.get("x-cron-secret") === cronSecret) {
-      const body = await req.json();
-      if (body?.action !== "cleanup") return json({ error: "Unknown cron action" }, 400);
-      const admin = createClient(supabaseUrl, serviceKey, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
-      const { data, error } = await admin.rpc("cleanup_stale_live_sessions");
-      if (error) return json({ error: "Stale session cleanup failed" }, 500);
-      return json({ cleaned: data ?? 0 });
     }
 
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -117,7 +101,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const action = body?.action;
 
-    if (action === "start" || action === "heartbeat" || action === "my_raw_location") {
+    if (action === "start" || action === "join" || action === "heartbeat") {
       const { data: profile, error: profileError } = await admin
         .from("profiles")
         .select("status")
@@ -130,15 +114,16 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "start") {
-      const { lat, lng, pin_id, room_id = null } = body;
+      const { lat, lng, pin_id } = body;
       if (typeof lat !== "number" || !Number.isFinite(lat) || lat < -90 || lat > 90 ||
           typeof lng !== "number" || !Number.isFinite(lng) || lng < -180 || lng > 180 ||
-          !isUuid(pin_id) || (room_id !== null && !isUuid(room_id))) {
-        return json({ error: "Valid lat, lng, pin_id and optional room_id are required" }, 400);
+          !isUuid(pin_id)) {
+        return json({ error: "Valid lat, lng and pin_id are required" }, 400);
       }
 
       const sessionId = crypto.randomUUID();
-      // Per-session salt prevents the same user/pin from reusing a stable public offset.\n      const stableKey = user.id + ":" + pin_id + ":" + sessionId;
+      // Per-session salt prevents the same user/pin from reusing a stable public offset.
+      const stableKey = user.id + ":" + pin_id + ":" + sessionId;
       const publicPoint = await jitterPoint(lat, lng, stableKey, jitterSecret);
 
       const { error: rawError } = await admin
@@ -158,17 +143,32 @@ Deno.serve(async (req: Request) => {
           id: sessionId,
           user_id: user.id,
           pin_id,
-          room_id,
+          room_id: sessionId,
           lat: publicPoint.lat,
           lng: publicPoint.lng,
         })
-        .select("id, slot_no, started_at")
+        .select("id, slot_no, started_at, room_id")
         .single();
 
       if (sessionError) {
         await admin.from("live_session_locations_private").delete().eq("session_id", sessionId);
         const status = sessionError.code === "P0001" ? 409 : 500;
         return json({ error: sessionError.message }, status);
+      }
+      return json({ session });
+    }
+
+    if (action === "join") {
+      if (!isUuid(body?.session_id)) return json({ error: "Valid session_id required" }, 400);
+      const { data: session, error } = await admin
+        .from("live_sessions")
+        .select("id, user_id, room_id, lat, lng, started_at, last_seen_at")
+        .eq("id", body.session_id)
+        .is("ended_at", null)
+        .maybeSingle();
+      if (error) return json({ error: "Could not load live session" }, 500);
+      if (!session || !session.room_id || session.last_seen_at < new Date(Date.now() - 5 * 60_000).toISOString()) {
+        return json({ error: "Live session is no longer available" }, 404);
       }
       return json({ session });
     }
@@ -191,20 +191,6 @@ Deno.serve(async (req: Request) => {
       if (error) return json({ error: error.message }, 500);
       if (!data) return json({ error: "Active session not found" }, 404);
       return json({ session: data });
-    }
-
-    if (action === "my_raw_location") {
-      if (!isUuid(body?.session_id)) return json({ error: "Valid session_id required" }, 400);
-      const { data, error } = await admin
-        .from("live_session_locations_private")
-        .select("session_id, lat, lng, created_at")
-        .eq("session_id", body.session_id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (error) return json({ error: error.message }, 500);
-      if (!data) return json({ error: "Private location not found" }, 404);
-      return json({ location: data });
     }
 
     return json({ error: "Unknown action" }, 400);
