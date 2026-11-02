@@ -296,7 +296,7 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
   }, [publisherSession, supabase])
 
   useEffect(() => () => publisherStream?.getTracks().forEach(track => track.stop()), [publisherStream])
-  useEffect(() => () => grantedStream?.getTracks().forEach(track => track.stop()), [grantedStream])
+  // Do not stop grantedStream when it is transferred into publisherStream; React runs state-effect cleanup on that transition.
 
   const authenticate = async (mode: 'signin' | 'signup') => {
     if (!supabase || !email.trim() || !password) return
