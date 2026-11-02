@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl, { type Map as MapLibreMap, type Marker } from 'maplibre-gl'
 import { createClient, type RealtimeChannel, type Session, type SupabaseClient } from '@supabase/supabase-js'
+import { X } from 'lucide-react'
 
 type LiveSession = {
   id: string
@@ -174,7 +175,7 @@ export function useViewer(
   return { remoteStream, status }
 }
 
-function LiveLayer({ map }: { map: MapLibreMap | null }) {
+function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: boolean; onClose: () => void }) {
   const supabase = useMemo(() => {
     const url = import.meta.env.VITE_SUPABASE_URL_LAB
     const key = import.meta.env.VITE_SUPABASE_ANON_KEY_LAB
@@ -192,7 +193,10 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const [sheetCollapsed, setSheetCollapsed] = useState(false)
-  const [panelOpen, setPanelOpen] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(open)
+  const [cameraGranted, setCameraGranted] = useState(false)
+  const [grantedStream, setGrantedStream] = useState<MediaStream | null>(null)
+  useEffect(() => { setPanelOpen(open) }, [open])
   const panelRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{x:number;y:number;left:number;top:number;mobile:boolean;moved:boolean}|null>(null)
   const markersRef = useRef<Marker[]>([])
@@ -292,6 +296,7 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
   }, [publisherSession, supabase])
 
   useEffect(() => () => publisherStream?.getTracks().forEach(track => track.stop()), [publisherStream])
+  useEffect(() => () => grantedStream?.getTracks().forEach(track => track.stop()), [grantedStream])
 
   const authenticate = async (mode: 'signin' | 'signup') => {
     if (!supabase || !email.trim() || !password) return
@@ -303,12 +308,24 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
     setNotice(result.error?.message ?? (mode === 'signup' ? 'Kayıt alındı. E-posta onayı gerekiyorsa gelen kutunu kontrol et.' : 'Giriş yapıldı'))
   }
 
+  const grantCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      grantedStream?.getTracks().forEach(track => track.stop())
+      setGrantedStream(stream)
+      setCameraGranted(true)
+      setNotice('Kamera ve mikrofon izni verildi')
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Kamera izni alınamadı')
+    }
+  }
+
   const startBroadcast = async () => {
     if (!supabase || !authSession || profileStatus !== 'active') return
     setBusy(true)
     let stream: MediaStream | null = null
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      stream = grantedStream ?? await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       const position = await new Promise<GeolocationPosition>((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000 }),
       )
@@ -322,6 +339,8 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
       })
       if (error || !data?.session?.id || !data?.session?.room_id) throw error ?? new Error('Yayın oturumu oluşturulamadı')
       setPublisherStream(stream)
+      setGrantedStream(null)
+      setCameraGranted(false)
       setPublisherSession({ id: data.session.id, room_id: data.session.room_id })
       setNotice('Canlı yayın başlatıldı')
       await refreshSessions()
@@ -395,15 +414,15 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
     dragRef.current = null
   }
 
-  if (!panelOpen && !publisherSession && !viewerSession) return <button className="live-panel-launcher" onClick={() => setPanelOpen(true)}>Canlı Yayın</button>
+  if (!panelOpen && !publisherSession && !viewerSession) return null
   if (!supabase) return <div className="live-layer-card live-layer-warning">LAB Supabase Preview anahtarları tanımlı değil.</div>
 
   return (
     <div ref={panelRef} className={`live-layer-ui${sheetCollapsed ? ' mobile-sheet-collapsed' : ''}`}>
       <div className="live-layer-drag-handle" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} role="button" tabIndex={0} aria-label="Yayın panelini taşı veya daralt">
         <span className="live-layer-drag-grip" />
-        <strong>YAYIN PANELİ</strong>
-        <span className="live-layer-drag-hint">{sheetCollapsed ? 'AÇ' : 'KAPAT'}</span>
+        <strong>CANLI YAYIN BAŞLAT</strong>
+        <button className="live-panel-close" onClick={onClose} aria-label="Paneli kapat"><X size={16} /></button>
       </div>
       {!authSession ? (
         <div className="live-layer-card">
@@ -424,9 +443,15 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
           ) : (
             <>
               {!publisherSession ? (
-                <button disabled={busy || !!viewerSession} onClick={() => void startBroadcast()}>
-                  {busy ? 'Hazırlanıyor…' : 'Canlı Yayın Başlat'}
-                </button>
+                <>
+                  <small>Konum: Yayın başlatılırken GPS üzerinden alınacak</small>
+                  <button className="secondary" disabled={cameraGranted || busy} onClick={() => void grantCamera()}>
+                    {cameraGranted ? 'Kamera İzni Verildi' : 'Kamera İzni Ver'}
+                  </button>
+                  <button disabled={busy || !!viewerSession || !cameraGranted} onClick={() => void startBroadcast()}>
+                    {busy ? 'Hazırlanıyor…' : 'Yayına Başla'}
+                  </button>
+                </>
               ) : (
                 <>
                   <small>{publisher.status}</small>
