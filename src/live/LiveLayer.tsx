@@ -236,7 +236,7 @@ function LiveLayer({ map }: { map: MapLibreMap | null }) {
       return
     }
     markersRef.current.forEach(marker => marker.remove())
-    markersRef.current = sessions.filter(row => row.user_id !== authSession.user.id).map(row => {
+    markersRef.current = sessions.map(row => {
       const button = document.createElement('button')
       button.type = 'button'
       button.className = 'live-session-marker'
