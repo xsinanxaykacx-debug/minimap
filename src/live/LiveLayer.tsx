@@ -281,8 +281,7 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
     if (!video) return
     video.srcObject = localPreviewStream
     if (localPreviewStream) void video.play().catch(() => undefined)
-    return () => { video.pause(); video.srcObject = null }
-  }, [localPreviewStream])
+  }, [localPreviewStream, publisherSession])
 
   useEffect(() => {
     if (!publisherSession || !supabase) return
@@ -439,6 +438,12 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
       ) : (
         <div className="live-layer-card">
           <div className="live-layer-heading"><strong>AYTAR CANLI</strong><span>{profileStatus || 'Kontrol ediliyor'}</span></div>
+          {profileStatus === 'active' && localPreviewStream && (
+            <div className="live-viewer-panel live-publisher-preview">
+              <div className="live-layer-heading"><strong>{publisherSession ? 'KENDİ YAYINIM' : 'KAMERA ÖNİZLEMESİ'}</strong><span>{publisherSession ? 'YAYINCI' : 'YAYIN ÖNCESİ'}</span></div>
+              <video ref={publisherVideoRef} autoPlay muted playsInline />
+            </div>
+          )}
           {profileStatus !== 'active' ? (
             <small>Hesap durumu: {profileStatus || 'yükleniyor'}. Yayın ve izleme için aktif üyelik gerekir.</small>
           ) : (
@@ -446,7 +451,6 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
               {!publisherSession ? (
                 <>
                   <small>Konum: Yayın başlatılırken GPS üzerinden alınacak</small>
-                  {grantedStream && <div className="live-viewer-panel live-publisher-preview"><div className="live-layer-heading"><strong>KAMERA ÖNİZLEMESİ</strong><span>YAYIN ÖNCESİ</span></div><video ref={publisherVideoRef} autoPlay muted playsInline /></div>}
                   <button className="secondary" disabled={cameraGranted || busy} onClick={() => void grantCamera()}>
                     {cameraGranted ? 'Kamera İzni Verildi' : 'Kamera İzni Ver'}
                   </button>
@@ -457,10 +461,6 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
               ) : (
                 <>
                   <small>{publisher.status}</small>
-                  <div className="live-viewer-panel live-publisher-preview">
-                    <div className="live-layer-heading"><strong>KENDİ YAYINIM</strong><span>YAYINCI ÖNİZLEMESİ</span></div>
-                    <video ref={publisherVideoRef} autoPlay muted playsInline />
-                  </div>
                   <button className="danger" disabled={busy} onClick={() => void endBroadcast()}>Yayını Bitir</button>
                 </>
               )}
