@@ -9,7 +9,7 @@ import {
 type CameraRecord = { id: string; name: string; lat: number; lng: number; videoUrl: string }
 type LayerKey = 'reports' | 'cameras'
 const initialLayers: Record<LayerKey, boolean> = { reports: true, cameras: true }
-const mapStyle = import.meta.env.VITE_MAP_STYLE_URL || 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
+const mapStyle = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 const cameraEndpoint = import.meta.env.VITE_IBB_CAMERA_PROXY_URL || 'https://aytar-ibb-cameras.xsinanxaykacx.workers.dev/'
 
 function pick(record: Record<string, unknown>, keys: string[]) {
