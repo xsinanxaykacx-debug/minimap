@@ -5,3 +5,12 @@
 
 /* İBB camera markers and live-stream popup */
 .camera-marker{display:flex;align-items:center;gap:5px;padding:3px 7px 3px 4px;border:1px solid #45d9d1;border-radius:20px;background:#071720ed;color:#dffdfa;cursor:pointer;box-shadow:0 0 14px #23cfc855;white-space:nowrap;transform:translateY(-2px)}.camera-marker-dot{width:9px;height:9px;flex:none;border-radius:50%;background:#56e6dc;border:2px solid #d9fffb;box-shadow:0 0 9px #45d9d1}.camera-marker-label{font:700 9px Manrope, sans-serif;max-width:130px;overflow:hidden;text-overflow:ellipsis}.camera-marker:hover{background:#17434a;z-index:10}.camera-popup{width:310px;padding:2px;color:#e8f2fb}.camera-popup-title{font:700 12px Manrope,sans-serif;margin:2px 0 7px;color:#e5f7f5}.camera-popup-status{font:9px 'DM Mono',monospace;color:#65d9d0;margin-bottom:8px}.camera-video{display:block;width:100%;max-height:190px;background:#02070b;border:1px solid #243a4a;border-radius:6px}.maplibregl-popup-content{background:#0c1724!important;border:1px solid #2b4956;border-radius:9px!important;box-shadow:0 12px 35px #0009!important;padding:12px!important}.maplibregl-popup-tip{border-top-color:#0c1724!important;border-bottom-color:#0c1724!important}.maplibregl-popup-close-button{color:#a9c0d2!important;font-size:18px!important;padding:3px 7px!important}.camera-error{margin:12px 4px 0;padding:9px;border:1px solid #653d42;border-radius:7px;background:#281a20;color:#e9a6a6;font-size:9px;line-height:1.5}
+
+/* Crawlable service introduction below the full-screen map; does not alter map layout. */
+body{overflow-x:hidden;overflow-y:auto}
+.seo-content{background:#080d16;border-top:1px solid #1a293a;color:#aebed0;padding:44px 24px 56px}
+.seo-content-inner{max-width:900px;margin:0 auto}
+.seo-kicker{font:10px 'DM Mono',monospace;letter-spacing:2px;color:#53d8d0;margin:0 0 12px}
+.seo-content h1{font-size:clamp(22px,3vw,34px);line-height:1.2;letter-spacing:-.8px;color:#e7edf7;margin:0 0 16px}
+.seo-content p:not(.seo-kicker){font-size:14px;line-height:1.8;color:#9aacc0;max-width:780px;margin:0 0 12px}
+@media(max-width:650px){body{overflow-x:hidden;overflow-y:auto}.seo-content{padding:32px 18px 42px}.seo-content p:not(.seo-kicker){font-size:13px}}
