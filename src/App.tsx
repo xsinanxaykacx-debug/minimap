@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import maplibregl, { type Map as MapLibreMap, type Marker } from 'maplibre-gl'
 import Hls from 'hls.js'
+import WebRtcLabTest from './WebRtcLabTest'
 import {
   Activity, Camera, ChevronDown, Crosshair, Layers3, Map as MapIcon,
   MapPinned, Menu, Minus, Plus, Radio, Search, Settings2, ShieldCheck,
@@ -80,6 +81,7 @@ function App() {
   const [cameraCount, setCameraCount] = useState(0)
   const [cameraLoading, setCameraLoading] = useState(false)
   const [cameraError, setCameraError] = useState('')
+  const [rtcTestOpen, setRtcTestOpen] = useState(false)
 
   const handleMapReady = useCallback((map: MapLibreMap) => {
     mapRef.current = map
@@ -210,7 +212,7 @@ function App() {
       <header className="topbar">
         <div className="brand-lockup"><div className="brand-mark"><Activity size={21} strokeWidth={2.4} /></div><div><div className="brand-name">AYTAR <span>LAB</span></div><div className="brand-subtitle">DAİMA İLERİ</div></div></div>
         <div className="topbar-center"><span className="environment-dot" /> GELİŞTİRME ORTAMI <span className="topbar-divider">/</span> İSTANBUL</div>
-        <div className="topbar-actions"><div className="connection"><span className="pulse-dot" /> <span>{mapReady ? 'HARİTA AKTİF' : 'BAĞLANIYOR'}</span></div><button className="icon-button mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menüyü aç"><Menu size={19} /></button><button className="profile-button" title="Laboratuvar profili">SA</button></div>
+        <div className="topbar-actions"><div className="connection"><span className="pulse-dot" /> <span>{mapReady ? 'HARİTA AKTİF' : 'BAĞLANIYOR'}</span></div><button className="turn-open-button" onClick={() => setRtcTestOpen(true)}>TURN TEST</button><button className="icon-button mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menüyü aç"><Menu size={19} /></button><button className="profile-button" title="Laboratuvar profili">SA</button></div>
       </header>
       <section className="workspace">
         <aside className={`sidebar ${menuOpen ? 'sidebar-open' : ''}`}>
@@ -241,6 +243,7 @@ function App() {
           <div className="inspector-footer"><span>AYTAR LAB</span><span>İZOLE ORTAM · ÜRETİMDEN BAĞIMSIZ</span></div>
         </aside>
       </section>
+      {rtcTestOpen && <div className="turn-test-backdrop"><WebRtcLabTest onClose={() => setRtcTestOpen(false)} /></div>}
       <footer className="statusbar"><div><span className="statusbar-dot" /> {notice}</div><div className="statusbar-right"><span>TR</span><span>41.0082° N, 28.9784° E</span><span>MAPLIBRE GL</span></div></footer>
     </main>
   )
