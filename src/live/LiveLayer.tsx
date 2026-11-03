@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import maplibregl, { type Map as MapLibreMap, type Marker } from 'maplibre-gl'
 import { createClient, type RealtimeChannel, type Session, type SupabaseClient } from '@supabase/supabase-js'
 import { X } from 'lucide-react'
+import { ICE_CONFIGURATION } from '../lib/liveClient'
 
 type LiveSession = {
   id: string
@@ -19,9 +20,7 @@ type SignalMessage = {
   candidate?: RTCIceCandidateInit
 }
 
-const rtcConfig: RTCConfiguration = {
-  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-}
+const rtcConfig: RTCConfiguration = ICE_CONFIGURATION
 
 async function sendSignal(channel: RealtimeChannel, payload: SignalMessage) {
   await channel.send({ type: 'broadcast', event: 'signal', payload })

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import maplibregl, { type Map as MapLibreMap, type Marker } from 'maplibre-gl'
 import Hls from 'hls.js'
 import LiveLayer from './live/LiveLayer'
+import WebRtcLabTest from './WebRtcLabTest'
 import {
   Camera, Crosshair, Layers3, Minus, Plus, Search, Settings2, UserRound,
 } from 'lucide-react'
@@ -70,6 +71,7 @@ function App() {
   const markersRef = useRef<Marker[]>([])
   const [search, setSearch] = useState('')
   const [livePanelOpen, setLivePanelOpen] = useState(false)
+  const [turnTestOpen, setTurnTestOpen] = useState(false)
   const [mapReady, setMapReady] = useState(false)
 
   const handleMapReady = useCallback((map: MapLibreMap) => {
@@ -200,9 +202,11 @@ function App() {
         <button className={"map-control webcam-control" + (livePanelOpen ? " is-active" : "")} onClick={() => setLivePanelOpen(value => !value)} aria-label="Webcam / Canlı yayın" title="Canlı yayın"><Camera size={18} /></button>
       </div>
       <div className="map-top-right">
+        <button className="turn-test-launch" onClick={() => setTurnTestOpen(true)}>TURN TEST</button>
         <button className="map-control round-control" title="Ayarlar" aria-label="Ayarlar"><Settings2 size={17} /></button>
         <button className="map-control round-control profile-control" title="Profil" aria-label="Profil"><UserRound size={17} /></button>
       </div>
+      {turnTestOpen && <div className="turn-test-backdrop"><WebRtcLabTest onClose={() => setTurnTestOpen(false)} /></div>}
     </main>
   )
 }
