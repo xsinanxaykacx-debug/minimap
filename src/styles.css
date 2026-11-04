@@ -118,3 +118,15 @@ button{color:inherit}
  .mobile-auth-buttons{display:flex;gap:8px}
  .mobile-auth-buttons button{flex:1;min-height:42px;border:1px solid #334155;border-radius:8px;background:#1E293B;color:#F8F9FA}
 }
+
+
+/* LAB authentication: Google OAuth action, keeping the existing panel styling. */
+.google-auth-row,.mobile-google-auth{display:flex;width:100%;margin:0 0 8px}
+.google-auth-button{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:38px;padding:0 12px;border:1px solid #334155;border-radius:5px;background:#1E293B;color:#F8F9FA;font-size:11px;font-weight:700;cursor:pointer}
+.google-auth-button:hover{background:#26384f;border-color:#475569}
+.google-auth-button:disabled{opacity:.55;cursor:wait}
+.google-auth-mark{font:800 17px Arial,sans-serif;background:conic-gradient(from -45deg,#4285F4 0 25%,#34A853 25% 50%,#FBBC05 50% 75%,#EA4335 75% 100%);background-clip:text;-webkit-background-clip:text;color:transparent}
+@media(max-width:767px){
+ .mobile-google-auth{margin:0}
+ .mobile-google-auth .google-auth-button{min-height:42px;border-radius:8px;font-size:12px}
+}
