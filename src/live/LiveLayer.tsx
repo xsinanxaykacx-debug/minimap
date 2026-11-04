@@ -307,7 +307,9 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
       ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
       : await supabase.auth.signUp({ email: email.trim(), password })
     setBusy(false)
-    setNotice(result.error?.message ?? (mode === 'signup' ? 'Kayıt alındı. E-posta onayı gerekiyorsa gelen kutunu kontrol et.' : 'Giriş yapıldı'))
+    setNotice(result.error?.message ?? (mode === 'signup'
+      ? (result.data.session ? 'Kayıt tamamlandı. Hesabın aktif, giriş yapıldı.' : 'Kayıt alındı. E-posta doğrulama ayarı henüz kapatılmamış.')
+      : 'Giriş yapıldı'))
   }
 
   const signInWithGoogle = async () => {
