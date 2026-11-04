@@ -310,6 +310,22 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
     setNotice(result.error?.message ?? (mode === 'signup' ? 'Kayıt alındı. E-posta onayı gerekiyorsa gelen kutunu kontrol et.' : 'Giriş yapıldı'))
   }
 
+  const signInWithGoogle = async () => {
+    if (!supabase || busy) return
+    setBusy(true)
+    setNotice('Google hesabına yönlendiriliyorsun…')
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin },
+      })
+      if (error) throw error
+    } catch (error) {
+      setNotice(error instanceof Error ? `Google girişi başlatılamadı: ${error.message}` : 'Google girişi başlatılamadı')
+      setBusy(false)
+    }
+  }
+
   const grantCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
@@ -438,6 +454,12 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
                 <button onClick={() => void authenticate('signin')} disabled={busy || !email.trim() || !password}>Giriş yap</button>
                 <button onClick={() => void authenticate('signup')} disabled={busy || !email.trim() || !password}>Kayıt ol</button>
               </div>
+              <div className="mobile-google-auth">
+                <button className="google-auth-button" onClick={() => void signInWithGoogle()} disabled={busy}>
+                  <span className="google-auth-mark" aria-hidden="true">G</span>
+                  {busy ? 'Yönlendiriliyor…' : 'Google ile devam et'}
+                </button>
+              </div>
             </div>
           )}
           <div className="text-[#94A3B8] text-xs">
@@ -470,6 +492,12 @@ function LiveLayer({ map, open, onClose }: { map: MapLibreMap | null; open: bool
             <strong>Canlı yayın</strong>
             <input value={email} onChange={event => setEmail(event.target.value)} placeholder="E-posta" type="email" />
             <input value={password} onChange={event => setPassword(event.target.value)} placeholder="Şifre" type="password" />
+            <div className="google-auth-row">
+              <button className="google-auth-button" disabled={busy} onClick={() => void signInWithGoogle()}>
+                <span className="google-auth-mark" aria-hidden="true">G</span>
+                {busy ? 'Yönlendiriliyor…' : 'Google ile devam et'}
+              </button>
+            </div>
             <div className="live-layer-actions">
               <button disabled={busy} onClick={() => { void authenticate('signin') }}>Giriş yap</button>
               <button className="secondary" disabled={busy} onClick={() => { void authenticate('signup') }}>Kayıt ol</button>
